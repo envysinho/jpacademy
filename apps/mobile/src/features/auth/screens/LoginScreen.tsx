@@ -6,18 +6,30 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ArrowRight, Eye, EyeOff, LockKeyhole, Mail, UserPlus } from 'lucide-react-native';
+import {
+  ArrowRight,
+  Eye,
+  EyeOff,
+  LockKeyhole,
+  Mail,
+  UserPlus,
+} from 'lucide-react-native';
 
 import { colors, fontFamily, spacing } from '@/theme';
+
+import { MathBackground } from '../components/MathBackground';
 
 export function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { width } = useWindowDimensions();
+  const showHero = width >= 768;
 
   function handleSubmit() {
     if (!email.trim() || !password) {
@@ -34,10 +46,12 @@ export function LoginScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.screen}
       >
-        <View pointerEvents="none" style={[styles.backgroundShape, styles.backgroundShapeTop]} />
-        <View pointerEvents="none" style={[styles.backgroundShape, styles.backgroundShapeBottom]} />
+        <MathBackground />
 
-        <View style={styles.formPanel}>
+        {/* Espacio reservado para contenido de marca (pendiente) */}
+        {showHero ? <View pointerEvents="none" style={styles.heroPanel} /> : null}
+
+        <View style={[styles.formPanel, !showHero && styles.formPanelCentered]}>
           <View style={styles.formCard}>
             <Text style={styles.heading}>Iniciar sesión</Text>
 
@@ -144,11 +158,9 @@ export function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#0000ff' },
-  screen: { backgroundColor: '#ffffff', flex: 1, overflow: 'hidden' },
-  backgroundShape: { backgroundColor: '#0000ff', borderRadius: 9999, position: 'absolute' },
-  backgroundShapeTop: { height: 620, left: -270, top: -420, width: 920 },
-  backgroundShapeBottom: { bottom: -500, height: 780, left: 10, width: 910 },
+  safeArea: { flex: 1, backgroundColor: '#1F1FFF' },
+  screen: { backgroundColor: '#0B0BC4', flex: 1, flexDirection: 'row', overflow: 'hidden' },
+  heroPanel: { flex: 1 },
   formPanel: {
     alignItems: 'flex-end',
     flex: 1.15,
@@ -156,15 +168,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 64,
     zIndex: 1,
   },
+  formPanelCentered: { alignItems: 'center', paddingHorizontal: spacing.lg },
   formCard: {
-    backgroundColor: 'rgba(255,255,255,0.84)',
-    borderRadius: 40,
-    maxWidth: 550,
+    backgroundColor: '#ffffffe2',
+    borderRadius: 32,
+    elevation: 16,
+    maxWidth: 520,
     padding: 40,
-    shadowColor: '#5A5580',
-    shadowOffset: { height: 12, width: 0 },
-    shadowOpacity: 0.08,
-    shadowRadius: 30,
+    shadowColor: '#020230',
+    shadowOffset: { height: 20, width: 0 },
+    shadowOpacity: 0.35,
+    shadowRadius: 40,
     width: '100%',
   },
   heading: {
@@ -176,7 +190,7 @@ const styles = StyleSheet.create({
   fieldGroup: { marginTop: 22 },
   inputRow: {
     alignItems: 'center',
-    borderColor: '#D9DAE5',
+    borderColor: '#878894',
     borderRadius: 18,
     borderWidth: 1,
     flexDirection: 'row',
@@ -199,8 +213,8 @@ const styles = StyleSheet.create({
   },
   forgotPassword: {
     alignSelf: 'flex-end',
-    color: '#000000',
-    fontFamily: fontFamily.medium,
+    color: '#f67700',
+    fontFamily: fontFamily.bold,
     fontSize: 15,
     marginTop: 14,
   },
@@ -213,14 +227,14 @@ const styles = StyleSheet.create({
   },
   submitButton: {
     alignItems: 'center',
-    backgroundColor: '#000000',
+    backgroundColor: '#f67700',
     borderRadius: 18,
     flexDirection: 'row',
     height: 62,
     justifyContent: 'center',
     marginTop: 32,
   },
-  submitButtonPressed: { backgroundColor: '#4126A2' },
+  submitButtonPressed: { backgroundColor: '#b55800' },
   submitLabel: { color: colors.surface, fontFamily: fontFamily.bold, fontSize: 18 },
   arrow: { position: 'absolute', right: 24 },
   divider: { alignItems: 'center', flexDirection: 'row', gap: 16, marginTop: 27 },
