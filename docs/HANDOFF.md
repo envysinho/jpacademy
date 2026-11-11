@@ -64,3 +64,17 @@ Ver [`PENDIENTES.md`](PENDIENTES.md) (lista única).
 - Verificado: Expo Go se descargó e instaló en `Tablet_Academy_8_7`; Expo abrió `exp://192.168.1.58:8081` en el AVD.
 - Resultado: Metro completó el bundle Android de 1,379 módulos sin errores.
 - Estado: la validación de la app móvil en el emulador está completada; Expo queda ejecutándose para inspección visual.
+
+### 2026-11-11 UTC — Claude (análisis del dashboard por rol)
+
+- Archivos modificados: nuevo `docs/DASHBOARD.md`; `docs/DECISIONS.md` (D-11 a D-15), `docs/PENDIENTES.md`, `docs/ARCHITECTURE.md`, `README.md`.
+- Sin cambios de código ni comandos de verificación; solo documentación.
+- Resultado: especificación del shell común, configuración por rol, rutas, componentes y fases A–D. Las decisiones D-11 a D-15 son **propuestas** hasta que el usuario responda las preguntas Q1–Q5.
+- Siguiente acción: resolver Q1–Q5 y empezar la Fase A (shell móvil, rol alumno, datos mock).
+
+### 2026-11-11 UTC — Claude (base del dashboard móvil)
+
+- Archivos nuevos: `apps/mobile/src/app/(app)/{_layout,dashboard}.tsx`, `src/features/dashboard/{screens/DashboardScreen,components/DashboardShell,components/Sidebar}.tsx`.
+- Modificados: `LoginScreen.tsx` (botón principal → `/dashboard`, temporal); `docs/DASHBOARD.md` (§0 estado y respuestas Q1/Q2/Q5), `docs/PENDIENTES.md`, `docs/mobile/LOGIN.md`.
+- Verificado: `pnpm --filter @academy/mobile typecheck` y `lint` sin errores. Los tipos de rutas (`.expo/types`) se regeneraron arrancando Expo brevemente. No se probó visualmente en el emulador.
+- Siguiente acción: probar en `Tablet_Academy_8_7` y empezar a añadir contenido al dashboard según indique el usuario.

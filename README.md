@@ -35,7 +35,7 @@ apps/
 packages/
   shared/      @academy/shared      Tipos y contratos (zod), sin dependencias nativas
   api-client/  @academy/api-client  Cliente HTTP mínimo (fetch) para web y móvil
-docs/                              ARCHITECTURE, DEVELOPMENT, DECISIONS, SETUP, PENDIENTES, HANDOFF
+docs/                              ARCHITECTURE, DEVELOPMENT, DECISIONS, SETUP, PENDIENTES, HANDOFF, DASHBOARD, mobile/LOGIN
 compose.yaml                       Solo PostgreSQL
 ```
 
@@ -66,4 +66,4 @@ Excepción: `@academy/mobile` no tiene build de producción propio en este scaff
 - **Servidor** (`apps/api/.env`, `.env`): `DATABASE_URL`, `API_PORT`, credenciales de Postgres. Nunca llegan al cliente.
 - **Públicas del cliente**: `VITE_*` (web) y `EXPO_PUBLIC_*` (móvil) quedan **embebidas en el bundle**. No pongas secretos en ellas.
 
-Más detalle en [DEVELOPMENT](docs/DEVELOPMENT.md), [ARCHITECTURE](docs/ARCHITECTURE.md), [DECISIONS](docs/DECISIONS.md), [SETUP](docs/SETUP.md) (estado del entorno), [PENDIENTES](docs/PENDIENTES.md) y [HANDOFF](docs/HANDOFF.md) (relevo entre agentes).
+Más detalle en [DEVELOPMENT](docs/DEVELOPMENT.md), [ARCHITECTURE](docs/ARCHITECTURE.md), [DECISIONS](docs/DECISIONS.md), [SETUP](docs/SETUP.md) (estado del entorno), [PENDIENTES](docs/PENDIENTES.md), [LOGIN MÓVIL](docs/mobile/LOGIN.md), [DASHBOARD](docs/DASHBOARD.md) (shell por rol) y [HANDOFF](docs/HANDOFF.md) (relevo entre agentes).

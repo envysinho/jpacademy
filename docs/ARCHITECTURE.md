@@ -41,6 +41,10 @@ Los contratos se definen una vez como esquema `zod` en `packages/shared/src` y e
 
 Expo Router con directorio de rutas `src/app` (convención del template oficial actual). `src/components`, `src/features`, `src/hooks`, `src/services`, `src/theme`, `src/utils`. Solo Android, orientación horizontal. Dependencias recortadas al mínimo para cuidar la memoria en tablets de 4 GB.
 
+## Dashboard por rol
+
+Tras el login, las tres personas (`STUDENT`, `TEACHER`, `ADMIN`) comparten un mismo shell (sidebar + topbar + contenido) con navegación y pantallas configuradas por rol. Móvil: grupo de rutas `(app)`; web: `layouts/DashboardShell`. El rol se define una vez en `@academy/shared`. Diseño y fases en [`DASHBOARD.md`](DASHBOARD.md).
+
 ## Fuera de alcance del scaffold
 
 Autenticación, RBAC, IA, WebSockets, WebRTC, monitoreo, modo kiosco, Kotlin nativo, Redis y microservicios.

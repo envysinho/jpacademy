@@ -30,6 +30,14 @@ Cada una sigue el orden de `HANDOFF.md`.
 - [ ] Chat y WebSockets.
 - [ ] Solicitud de ayuda docente con enlace de Google Meet.
 - [ ] Monitoreo académico.
-- [ ] Diseño UX/UI: dashboard con grid y sidebar, esquinas ~12 px, colores contenidos.
+- [ ] Diseño UX/UI: dashboard con grid y sidebar, esquinas ~12 px, colores contenidos. Especificación en [`DASHBOARD.md`](DASHBOARD.md); fases A–D en §7 de ese documento.
+  - [x] Base del shell móvil: `/dashboard` con sidebar "Logo" y contenido en blanco.
+  - [ ] Fase A: contenido del dashboard (rol alumno, datos mock), navegación del sidebar y topbar; tokens de marca en `theme` cuando se decidan.
+  - [ ] Fase B: `roleSchema` en `@academy/shared` y navegación de los tres roles.
+  - [ ] Fase C: shell web con `react-router` (docente y administrador).
+  - [ ] Fase D: rol desde la sesión y guard (depende de autenticación).
+  - [ ] Responder las preguntas abiertas Q3 y Q4 de `DASHBOARD.md` §9.
+  - [ ] Sustituir el texto "Logo" del sidebar por el logo real.
+  - [ ] Quitar la navegación temporal login → `/dashboard` al implementar autenticación.
 - [ ] `api-client` con casos reales (hoy solo `/health`).
 - [ ] Kotlin nativo: MediaProjection, WebRTC, modo kiosco (solo con consentimiento y dispositivos institucionales).

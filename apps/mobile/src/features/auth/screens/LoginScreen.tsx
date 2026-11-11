@@ -9,6 +9,7 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
+import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowRight, Eye, EyeOff, LockKeyhole, Mail, UserPlus } from 'lucide-react-native';
 
@@ -22,8 +23,11 @@ export function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const router = useRouter();
   const { width } = useWindowDimensions();
   const showHero = width >= 768;
+  // Temporal: sin autenticación real, el botón entra directo al dashboard.
+  const goToDashboard = () => router.replace('/dashboard');
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -90,7 +94,7 @@ export function LoginScreen() {
 
             <Pressable
               accessibilityRole="button"
-              onPress={handlePendingAction}
+              onPress={goToDashboard}
               style={({ pressed }) => [styles.submitButton, pressed && styles.submitButtonPressed]}
             >
               <Text style={styles.submitLabel}>Iniciar sesión</Text>
