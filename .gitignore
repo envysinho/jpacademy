@@ -1,0 +1,17 @@
+node_modules/
+dist/
+build/
+.expo/
+expo-env.d.ts
+*.tsbuildinfo
+# Android nativo: se genera con `expo prebuild`, no se versiona (ver docs/DECISIONS.md)
+apps/mobile/android/
+apps/mobile/ios/
+# Prisma client generado
+apps/api/generated/
+# entorno
+.env
+.env.*
+!.env.example
+.DS_Store
+*.log

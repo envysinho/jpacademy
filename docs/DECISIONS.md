@@ -1,0 +1,17 @@
+# Decisiones
+
+| ID   | Decisión                                                                                            | Motivo                                                                                             |
+| ---- | --------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| D-01 | pnpm workspaces sin herramientas extra (`pnpm -r`, `--parallel`)                                    | Menos dependencias; suficiente para 3 apps.                                                        |
+| D-02 | Contratos con **zod** en `@academy/shared`, tipos inferidos                                         | Una sola fuente de verdad; valida en runtime en el cliente; librería ligera y sin deps nativas.    |
+| D-03 | Paquetes compartidos compilados a CommonJS (`dist/`)                                                | NestJS corre en CJS; Metro y Vite lo consumen (Vite con `optimizeDeps.include`).                   |
+| D-04 | Expo Router con rutas en `src/app` y template recortado (sin reanimated, gesture-handler, web, iOS) | Menor consumo de memoria/tamaño en tablets de 4 GB; se añade solo lo necesario.                    |
+| D-05 | `apps/mobile/android/` en `.gitignore`; se genera con `expo prebuild`                               | Evita código nativo generado en Git. Revisar (versionar o usar config plugins) al empezar Kotlin.  |
+| D-06 | Prisma 7: `prisma.config.ts`, cliente generado en `apps/api/generated/prisma` (ignorado por Git)    | Método recomendado por la versión fijada. Falta el adaptador de runtime (`@prisma/adapter-pg`).    |
+| D-07 | TypeScript 6 en todo el workspace; Expo SDK 58 / React Native 0.88 / React 19.3.0                   | Versiones alineadas con el template oficial de Expo. React web fijado a 19.3.0 para igualar móvil. |
+| D-08 | PostgreSQL 17 en Docker Compose con healthcheck y volumen                                           | Único servicio de infraestructura por ahora.                                                       |
+| D-09 | CORS abierto en el API solo para desarrollo                                                         | Restringir orígenes antes de producción.                                                           |
+
+## Riesgos pendientes
+
+Los riesgos abiertos se siguen en [`PENDIENTES.md`](PENDIENTES.md). Estado del entorno Android: [`SETUP.md`](SETUP.md).

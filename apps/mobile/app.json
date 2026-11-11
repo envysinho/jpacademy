@@ -1,0 +1,33 @@
+{
+  "expo": {
+    "name": "EdTech Academy OS",
+    "slug": "academy-mobile",
+    "version": "0.1.0",
+    "orientation": "landscape",
+    "scheme": "academy",
+    "icon": "./assets/images/icon.png",
+    "userInterfaceStyle": "light",
+    "platforms": ["android"],
+    "android": {
+      "package": "com.academy.os",
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/images/android-icon-foreground.png",
+        "backgroundImage": "./assets/images/android-icon-background.png",
+        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+      }
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#2563EB",
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 76
+        }
+      ]
+    ],
+    "experiments": { "typedRoutes": true }
+  }
+}
