@@ -1,1 +1,1 @@
-export const APP_NAME = 'EdTech Academy OS';
+export const APP_NAME = 'Academia José Pisconte';

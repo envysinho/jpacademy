@@ -1,4 +1,4 @@
-# EdTech Academy OS
+# Academia - José Pisconte
 
 Plataforma académica para ~60 alumnos con tablets Android (8,7", 4 GB RAM, horizontal), más paneles web para docentes y administradores.
 

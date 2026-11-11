@@ -11,6 +11,7 @@
 | D-07 | TypeScript 6 en todo el workspace; Expo SDK 58 / React Native 0.88 / React 19.3.0                   | Versiones alineadas con el template oficial de Expo. React web fijado a 19.3.0 para igualar móvil. |
 | D-08 | PostgreSQL 17 en Docker Compose con healthcheck y volumen                                           | Único servicio de infraestructura por ahora.                                                       |
 | D-09 | CORS abierto en el API solo para desarrollo                                                         | Restringir orígenes antes de producción.                                                           |
+| D-10 | Inter es la tipografía de producto para interfaces web y móvil.                                     | Legibilidad consistente en pantallas de tablet y una identidad visual única.                       |
 
 ## Riesgos pendientes
 
