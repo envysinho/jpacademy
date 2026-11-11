@@ -10,35 +10,20 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import {
-  ArrowRight,
-  Eye,
-  EyeOff,
-  LockKeyhole,
-  Mail,
-  UserPlus,
-} from 'lucide-react-native';
+import { ArrowRight, Eye, EyeOff, LockKeyhole, Mail, UserPlus } from 'lucide-react-native';
 
 import { colors, fontFamily, spacing } from '@/theme';
 
 import { MathBackground } from '../components/MathBackground';
 
+const handlePendingAction = () => undefined;
+
 export function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const { width } = useWindowDimensions();
   const showHero = width >= 768;
-
-  function handleSubmit() {
-    if (!email.trim() || !password) {
-      setError('Ingresa tu correo electrónico y contraseña.');
-      return;
-    }
-
-    setError('El inicio de sesión estará disponible al conectar el servicio de autenticación.');
-  }
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -62,10 +47,7 @@ export function LoginScreen() {
                   autoCapitalize="none"
                   autoComplete="email"
                   keyboardType="email-address"
-                  onChangeText={(value) => {
-                    setEmail(value);
-                    setError(null);
-                  }}
+                  onChangeText={setEmail}
                   placeholder="Correo electrónico"
                   placeholderTextColor={colors.textMuted}
                   returnKeyType="next"
@@ -80,11 +62,8 @@ export function LoginScreen() {
                 <LockKeyhole color="#70798B" size={21} strokeWidth={2} style={styles.inputIcon} />
                 <TextInput
                   autoComplete="current-password"
-                  onChangeText={(value) => {
-                    setPassword(value);
-                    setError(null);
-                  }}
-                  onSubmitEditing={handleSubmit}
+                  onChangeText={setPassword}
+                  onSubmitEditing={handlePendingAction}
                   placeholder="Contraseña"
                   placeholderTextColor={colors.textMuted}
                   secureTextEntry={!showPassword}
@@ -105,23 +84,13 @@ export function LoginScreen() {
               </View>
             </View>
 
-            <Pressable
-              onPress={() =>
-                setError('La recuperación de contraseña estará disponible próximamente.')
-              }
-            >
+            <Pressable onPress={handlePendingAction}>
               <Text style={styles.forgotPassword}>¿Olvidaste tu contraseña?</Text>
             </Pressable>
 
-            {error ? (
-              <Text accessibilityRole="alert" style={styles.error}>
-                {error}
-              </Text>
-            ) : null}
-
             <Pressable
               accessibilityRole="button"
-              onPress={handleSubmit}
+              onPress={handlePendingAction}
               style={({ pressed }) => [styles.submitButton, pressed && styles.submitButtonPressed]}
             >
               <Text style={styles.submitLabel}>Iniciar sesión</Text>
@@ -141,7 +110,7 @@ export function LoginScreen() {
 
             <Pressable
               accessibilityRole="button"
-              onPress={() => setError('El registro estará disponible próximamente.')}
+              onPress={handlePendingAction}
               style={({ pressed }) => [
                 styles.registerButton,
                 pressed && styles.registerButtonPressed,
@@ -217,13 +186,6 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.bold,
     fontSize: 15,
     marginTop: 14,
-  },
-  error: {
-    color: colors.danger,
-    fontFamily: fontFamily.regular,
-    fontSize: 13,
-    lineHeight: 18,
-    marginTop: spacing.md,
   },
   submitButton: {
     alignItems: 'center',
