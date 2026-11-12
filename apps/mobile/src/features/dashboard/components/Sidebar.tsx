@@ -63,7 +63,7 @@ export function Sidebar({ role }: { role: DashboardRole }) {
             <View style={[styles.profileIcon, pressed && styles.profileIconPressed]}>
               <UserRound color={colors.text} size={22} strokeWidth={2} />
             </View>
-            {!isCollapsed && <Text style={styles.profileLabel}>Sergio</Text>}
+            {!isCollapsed && <Text style={styles.profileLabel}>Estudiante</Text>}
           </>
         )}
       </Pressable>
@@ -119,7 +119,7 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontFamily: fontFamily.medium,
     fontSize: 17,
-    marginLeft: spacing.md,
+    marginLeft: spacing.sm,
   },
   profileButton: {
     alignItems: 'center',
@@ -145,6 +145,6 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontFamily: fontFamily.medium,
     fontSize: 17,
-    marginLeft: spacing.md,
+    marginLeft: spacing.sm,
   },
 });
