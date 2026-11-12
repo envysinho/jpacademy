@@ -37,7 +37,8 @@ Cada una sigue el orden de `HANDOFF.md`.
   - [ ] Fase C: shell web con `react-router` (docente y administrador).
   - [ ] Fase D: rol desde la sesión y guard (depende de autenticación).
   - [ ] Responder las preguntas abiertas Q3 y Q4 de `DASHBOARD.md` §9.
-  - [ ] Sustituir el texto "Logo" del sidebar por el logo real.
+  - [ ] Sustituir el texto "Logo" del sidebar por el logo real (ya disponible en `logos`, ver [`ASSETS.md`](ASSETS.md)).
+  - [ ] Sustituir icono, splash e icono adaptativo de Expo por la marca.
   - [ ] Quitar la navegación temporal login → `/dashboard` al implementar autenticación.
 - [ ] `api-client` con casos reales (hoy solo `/health`).
 - [ ] Kotlin nativo: MediaProjection, WebRTC, modo kiosco (solo con consentimiento y dispositivos institucionales).

@@ -78,3 +78,10 @@ Ver [`PENDIENTES.md`](PENDIENTES.md) (lista única).
 - Modificados: `LoginScreen.tsx` (botón principal → `/dashboard`, temporal); `docs/DASHBOARD.md` (§0 estado y respuestas Q1/Q2/Q5), `docs/PENDIENTES.md`, `docs/mobile/LOGIN.md`.
 - Verificado: `pnpm --filter @academy/mobile typecheck` y `lint` sin errores. Los tipos de rutas (`.expo/types`) se regeneraron arrancando Expo brevemente. No se probó visualmente en el emulador.
 - Siguiente acción: probar en `Tablet_Academy_8_7` y empezar a añadir contenido al dashboard según indique el usuario.
+
+### 2026-11-12 UTC — Claude (logos)
+
+- Movido `logos/` → `assets/brand/logos/` (originales). Copiadas las 12 variantes `@1x/@2x/@3x` PNG a `apps/mobile/assets/images/logos/`.
+- Nuevos: `apps/mobile/src/theme/logos.ts` (mapa `logos`), `docs/ASSETS.md`. Modificados: `README.md`, `docs/PENDIENTES.md`.
+- Los logos aún no se usan en ninguna pantalla. Uso y reglas en `docs/ASSETS.md`.
+- Siguiente acción: usar `logos.horizontal` en `Sidebar.tsx` cuando el usuario lo indique.

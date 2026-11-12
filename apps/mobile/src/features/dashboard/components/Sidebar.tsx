@@ -1,6 +1,6 @@
-import { PanelLeftClose, PanelLeftOpen, UserRound } from 'lucide-react-native';
+import { UserRound } from 'lucide-react-native';
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { colors, fontFamily, spacing } from '@/theme';
 
@@ -12,21 +12,37 @@ export const COLLAPSED_SIDEBAR_WIDTH = 72;
 /** Barra lateral reutilizable. La navegación se añadirá después del control de despliegue. */
 export function Sidebar({ role }: { role: DashboardRole }) {
   const [isCollapsed, setIsCollapsed] = useState(true);
-  const ToggleIcon = isCollapsed ? PanelLeftOpen : PanelLeftClose;
   const navigationItems = roleNavigation[role];
 
   return (
     <View style={[styles.sidebar, isCollapsed && styles.sidebarCollapsed]}>
       <View style={styles.topActions}>
-        <Pressable
-          accessibilityLabel={isCollapsed ? 'Desplegar barra lateral' : 'Contraer barra lateral'}
-          accessibilityRole="button"
-          hitSlop={8}
-          onPress={() => setIsCollapsed((currentValue) => !currentValue)}
-          style={({ pressed }) => [styles.toggle, pressed && styles.togglePressed]}
-        >
-          <ToggleIcon color={colors.text} size={22} strokeWidth={2} />
-        </Pressable>
+        <View style={styles.brandRow}>
+          <Pressable
+            accessibilityLabel={isCollapsed ? 'Desplegar barra lateral' : 'Contraer barra lateral'}
+            accessibilityRole="button"
+            hitSlop={8}
+            onPress={() => setIsCollapsed((currentValue) => !currentValue)}
+            style={({ pressed }) => [styles.toggle, pressed && styles.togglePressed]}
+          >
+            <Image
+              accessibilityLabel="Academia José Pisconte"
+              resizeMode="contain"
+              source={require('../../../../assets/images/logos/escudo.png')}
+              style={styles.academyMark}
+            />
+          </Pressable>
+          {!isCollapsed && (
+            <View style={styles.logoTextCrop}>
+              <Image
+                accessibilityLabel="José Pisconte Reforzamiento Académico"
+                resizeMode="stretch"
+                source={require('../../../../assets/images/logos/logo_horizontal.png')}
+                style={styles.logoText}
+              />
+            </View>
+          )}
+        </View>
         {navigationItems.map(({ icon: Icon, key, label }) => (
           <Pressable
             key={key}
@@ -85,6 +101,10 @@ const styles = StyleSheet.create({
   },
   sidebarCollapsed: { alignItems: 'center', paddingHorizontal: 0, width: COLLAPSED_SIDEBAR_WIDTH },
   topActions: { gap: spacing.sm },
+  brandRow: { alignItems: 'center', flexDirection: 'row', gap: spacing.sm },
+  logoTextCrop: { height: 46, overflow: 'hidden', width: 90 },
+  logoText: { height: 46, left: -38, position: 'absolute', top: 0, width: 125 },
+  academyMark: { height: 44, width: 44 },
   toggle: {
     alignItems: 'center',
     borderRadius: 12,
