@@ -93,3 +93,10 @@ Ver [`PENDIENTES.md`](PENDIENTES.md) (lista única).
 - Verificado: typecheck y lint; captura en `Tablet_Academy_8_7` en modo plegado y desplegado.
 - Nota: `MathBackground.tsx` tiene un aviso de Prettier previo, no tocado.
 - Siguiente acción: conectar los ítems del sidebar a rutas de `(app)`.
+
+### 2026-11-12 UTC — Claude (guía de estilo visual)
+
+- Nuevo `docs/ESTILO_VISUAL.md`: paleta (`brand`, neutros, colores del escudo como referencia), reglas de uso del naranja y del azul, contraste WCAG medido, escala tipográfica (incluido el bloque de marca del sidebar), forma/espaciado y checklist para pantallas nuevas.
+- Ajustes previos del sidebar: "Reforzamiento Académico" (A mayúscula), subtítulo 9,5 / `lineHeight` 13 / `letterSpacing` -0,05 para igualar el ancho de "José Pisconte" (18 / `lineHeight` 20), `includeFontPadding: false`. Verificado en el emulador.
+- Enlazado desde `README.md`, `DASHBOARD.md` §0.1, `DECISIONS.md` D-12 y `PENDIENTES.md`.
+- **Antes de crear o cambiar una pantalla, leer `ESTILO_VISUAL.md`** y documentar ahí cualquier color o tamaño nuevo.

@@ -23,6 +23,8 @@ Respuestas del usuario a las preguntas abiertas:
 
 ### 0.1 Estilo visual del sidebar (2026-11-12)
 
+Reglas generales de color y tipografía: [ESTILO_VISUAL.md](ESTILO_VISUAL.md).
+
 El sidebar reutiliza la identidad del login para que el paso login → dashboard se sienta continuo; el área de contenido queda clara y sobria.
 
 | Elemento      | Estilo                                                                                                                                                                                                  |

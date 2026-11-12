@@ -39,7 +39,8 @@ Cada una sigue el orden de `HANDOFF.md`.
   - [ ] Responder las preguntas abiertas Q3 y Q4 de `DASHBOARD.md` §9.
   - [x] Sidebar con logo y estética del login (ver `DASHBOARD.md` §0.1).
   - [ ] Conectar los ítems del sidebar a rutas reales (hoy el activo es estado local).
-  - [ ] Migrar los colores fijos de `LoginScreen` a los tokens `brand`.
+  - [ ] Migrar los colores fijos de `LoginScreen` a los tokens `brand` (ver [`ESTILO_VISUAL.md`](ESTILO_VISUAL.md) §9).
+  - [ ] Revisar contraste del naranja del login (2,8:1, ver `ESTILO_VISUAL.md` §4).
   - [ ] Sustituir icono, splash e icono adaptativo de Expo por la marca.
   - [ ] Quitar la navegación temporal login → `/dashboard` al implementar autenticación.
 - [ ] `api-client` con casos reales (hoy solo `/health`).
