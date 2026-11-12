@@ -1,9 +1,11 @@
 import {
   BookOpen,
   CalendarDays,
+  ChartLine,
   ClipboardList,
   House,
   TrendingUp,
+  UsersRound,
   type LucideIcon,
 } from 'lucide-react-native';
 
@@ -24,6 +26,18 @@ export const roleNavigation: Record<DashboardRole, SidebarNavigationItem[]> = {
     { icon: CalendarDays, key: 'calendar', label: 'Calendario' },
     { icon: TrendingUp, key: 'progress', label: 'Progreso' },
   ],
-  TEACHER: [],
-  ADMIN: [],
+  TEACHER: [
+    { icon: House, key: 'home', label: 'Inicio' },
+    { icon: BookOpen, key: 'classes', label: 'Clases' },
+    { icon: UsersRound, key: 'students', label: 'Estudiantes' },
+    { icon: CalendarDays, key: 'calendar', label: 'Calendario' },
+    { icon: ChartLine, key: 'reports', label: 'Reportes' },
+  ],
+  ADMIN: [{ icon: House, key: 'home', label: 'Inicio' }],
+};
+
+export const roleLabels: Record<DashboardRole, string> = {
+  STUDENT: 'Estudiante',
+  TEACHER: 'Docente',
+  ADMIN: 'Administrador',
 };

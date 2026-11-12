@@ -4,11 +4,11 @@
 
 ## Dónde está cada cosa
 
-| Ruta                               | Contenido                                                                                 | Se empaqueta en la app |
-| ---------------------------------- | ----------------------------------------------------------------------------------------- | ---------------------- |
-| `assets/brand/logos/`              | **Originales** (fuente de verdad): PNG a tamaño completo, WebP y variantes `@1x/@2x/@3x`. | No                     |
-| `apps/mobile/assets/images/logos/` | Solo las variantes `@1x`, `@2x`, `@3x` en PNG (12 archivos).                              | Sí (Metro)             |
-| `apps/mobile/src/theme/logos.ts`   | Mapa tipado `logos` con `require()` de cada logo.                                         | —                      |
+| Ruta                               | Contenido                                                                                            | Se empaqueta en la app |
+| ---------------------------------- | ---------------------------------------------------------------------------------------------------- | ---------------------- |
+| `assets/brand/logos/`              | **Originales** (fuente de verdad): PNG a tamaño completo, WebP y variantes `@1x/@2x/@3x`.            | No                     |
+| `apps/mobile/assets/images/logos/` | Variantes `@1x`, `@2x`, `@3x` en PNG; además `escudo.png` y `logo_horizontal.png` (copias de `@1x`). | Sí (Metro)             |
+| `apps/mobile/src/theme/logos.ts`   | Mapa tipado `logos` con `require()` de cada logo.                                                    | —                      |
 
 ## Variantes disponibles
 
@@ -43,7 +43,8 @@ import { logos } from '@/theme/logos';
 
 - Define siempre el **ancho** y la relación de aspecto (o `height`); React Native no usa el tamaño intrínseco como tamaño en pantalla de forma fiable.
 - No importes los PNG a mano con rutas relativas: añade la entrada a `logos.ts` para que haya un único punto de uso.
-- Cada logo debe tener `@1x`, `@2x` y `@3x` en la carpeta de la app; RN elige la densidad. **No copies a esa carpeta los archivos sin sufijo** (`logo_horizontal.png`): Metro los trataría como escala 1 y chocarían con `@1x`.
+- **En el `require` usa siempre el nombre base sin sufijo** (`require('.../escudo.png')`). Metro no acepta `@1x` en la ruta (falla con "None of these files exist") y resuelve solo `escudo@1x.png`, `@2x` y `@3x` a partir del nombre base.
+- Cada logo debe tener `@2x` y `@3x`, y la escala 1 como `@1x` **o** sin sufijo. `escudo.png` y `logo_horizontal.png` duplican hoy su `@1x`; funciona, pero conviene conservar solo uno de los dos.
 - La tablet objetivo tiene densidad ~1,1 (180 dpi), por lo que normalmente se usará `@2x`.
 
 ## Uso en web (aún no implementado)
@@ -59,6 +60,7 @@ import { logos } from '@/theme/logos';
 
 ## Pendiente
 
-- Los logos aún **no se usan** en pantallas: el sidebar del dashboard sigue mostrando el texto "Logo" (ver [DASHBOARD.md](DASHBOARD.md) §0).
+- `logos.shield` se usa en el sidebar del dashboard. El resto de logos aún no se usa en pantallas.
+- Eliminar el duplicado de escala 1 (`escudo.png`/`escudo@1x.png`, `logo_horizontal.png`/`logo_horizontal@1x.png`).
 - El icono de la app, el splash y el icono adaptativo de Android siguen siendo los del template de Expo (`apps/mobile/assets/images/icon.png`, `splash-icon.png`, `android-icon-*.png`). Sustituirlos por la marca requiere decidir qué variante usar.
 - Originales pesados (~8 MB entre PNG y WebP en `assets/brand/logos/`): evaluar Git LFS o conservar solo un formato si el repositorio crece.

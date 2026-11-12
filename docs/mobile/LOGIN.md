@@ -184,13 +184,13 @@ Lucide se apoya en `react-native-svg`. No se usan símbolos Unicode como sustitu
 
 ## 8. Dependencias incorporadas durante el prototipo
 
-| Dependencia                | Uso actual                                                                                                                                                                          |
-| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@expo-google-fonts/inter` | Archivos y nombres de los pesos de Inter                                                                                                                                            |
-| `expo-font`                | Carga de las fuentes al iniciar la app                                                                                                                                              |
-| `lucide-react-native`      | Iconos del formulario                                                                                                                                                               |
-| `react-native-svg`         | Render de Lucide y del fondo matemático                                                                                                                                             |
-| `expo-linear-gradient`     | Se instaló durante la exploración de fondos; el diseño final usa gradientes de `react-native-svg` y actualmente no lo importa. Puede retirarse si no se reutiliza en otra pantalla. |
+| Dependencia                | Uso actual                                                                                                |
+| -------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `@expo-google-fonts/inter` | Archivos y nombres de los pesos de Inter                                                                  |
+| `expo-font`                | Carga de las fuentes al iniciar la app                                                                    |
+| `lucide-react-native`      | Iconos del formulario                                                                                     |
+| `react-native-svg`         | Render de Lucide y del fondo matemático                                                                   |
+| `expo-linear-gradient`     | No lo usa el login (usa gradientes de `react-native-svg`), pero sí el sidebar del dashboard. Se mantiene. |
 
 ## 9. Evolución del diseño
 
@@ -257,7 +257,6 @@ No se deben guardar secretos en variables `EXPO_PUBLIC_*`, porque quedan embebid
 - Crear pantallas y rutas de recuperación y registro.
 - Definir estados de carga, bloqueo y error del API.
 - Probar el diseño en una tablet física.
-- Decidir si se elimina `expo-linear-gradient` si continúa sin uso.
 
 ## 13. Verificación
 

@@ -37,7 +37,9 @@ Cada una sigue el orden de `HANDOFF.md`.
   - [ ] Fase C: shell web con `react-router` (docente y administrador).
   - [ ] Fase D: rol desde la sesión y guard (depende de autenticación).
   - [ ] Responder las preguntas abiertas Q3 y Q4 de `DASHBOARD.md` §9.
-  - [ ] Sustituir el texto "Logo" del sidebar por el logo real (ya disponible en `logos`, ver [`ASSETS.md`](ASSETS.md)).
+  - [x] Sidebar con logo y estética del login (ver `DASHBOARD.md` §0.1).
+  - [ ] Conectar los ítems del sidebar a rutas reales (hoy el activo es estado local).
+  - [ ] Migrar los colores fijos de `LoginScreen` a los tokens `brand`.
   - [ ] Sustituir icono, splash e icono adaptativo de Expo por la marca.
   - [ ] Quitar la navegación temporal login → `/dashboard` al implementar autenticación.
 - [ ] `api-client` con casos reales (hoy solo `/health`).

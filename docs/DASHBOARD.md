@@ -2,14 +2,14 @@
 
 Especificación del mockup general que se muestra **después del login** y que se reutiliza para los tres roles: alumno (`STUDENT`), docente (`TEACHER`) y administrador (`ADMIN`). Primero se construye el shell y la vista de un rol; los otros dos solo añaden configuración y contenido.
 
-Estado: **base móvil creada, contenido en blanco** (ver §0). Última revisión: 2026-11-11 (UTC).
+Estado: **base móvil creada, contenido en blanco** (ver §0). Última revisión: 2026-11-12 (UTC).
 
 ## 0. Estado actual y decisiones del usuario
 
 Implementado en `apps/mobile`:
 
 - Ruta `/dashboard` (`src/app/(app)/dashboard.tsx`) → `DashboardScreen` → `DashboardShell`.
-- `Sidebar` de 240 dp con el **texto "Logo"** (sin logo real, sin navegación todavía).
+- `Sidebar` con la estética del login (ver §0.1): plegable (72 dp) / desplegado (240 dp), navegación por rol desde `config/roleNavigation.ts` y etiqueta de rol en el pie. El ítem activo es estado local; los ítems aún no navegan.
 - Área de contenido **en blanco**, a la espera de diseño.
 - Sin topbar, sin roles, sin datos. Todo lo descrito en §3–§7 más allá de esto es **propuesta**, no código.
 - Temporal: el botón "Iniciar sesión" del login hace `router.replace('/dashboard')` (no hay autenticación). `src/app/index.tsx` sigue redirigiendo a `/login`.
@@ -19,7 +19,24 @@ Respuestas del usuario a las preguntas abiertas:
 
 - **Q1:** docentes y administradores **también usan web**; por ahora solo se desarrolla móvil.
 - **Q2:** colores y acentos se decidirán sobre la marcha. Se usan neutros del `theme` actual, sin tokens nuevos.
-- **Q5:** el sidebar muestra solo el texto "Logo" hasta tener el logo.
+- **Q5:** ~~solo el texto "Logo"~~ → ya se usan los logos: escudo + nombre en texto (ver §0.1).
+
+### 0.1 Estilo visual del sidebar (2026-11-12)
+
+El sidebar reutiliza la identidad del login para que el paso login → dashboard se sienta continuo; el área de contenido queda clara y sobria.
+
+| Elemento      | Estilo                                                                                                                                                                                                  |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Fondo         | Degradado del login `brand.blue → brand.blueDeep → brand.blueNight` (`expo-linear-gradient`).                                                                                                           |
+| Forma         | Esquinas derechas de 28 dp, `elevation` 12.                                                                                                                                                             |
+| Marca         | `logos.shield` (42 dp) como botón de plegar/desplegar + "José Pisconte" (Inter 800, blanco) y "Reforzamiento Académico". El logo horizontal no se usa porque su texto azul marino no se lee sobre azul. |
+| Ítem inactivo | Icono y texto blanco al 72 %; al pulsar, fondo blanco al 14 %.                                                                                                                                          |
+| Ítem activo   | Píldora blanca (como la tarjeta del login), icono naranja `brand.accent`, texto `brand.blueDeep` en negrita, `accessibilityState.selected`.                                                             |
+| Pie           | Separador blanco al 14 %, avatar circular translúcido, rol + "Ver perfil".                                                                                                                              |
+| Decoración    | `∑` y `π` blancos al 6 %, solo desplegado (eco del fondo matemático del login).                                                                                                                         |
+
+Tokens nuevos en `src/theme/index.ts`: `brand` (`blue`, `blueDeep`, `blueNight`, `accent`, `accentPressed`, `onBlue`, `onBlueMuted`, `onBlueSubtle`). El login aún usa sus valores fijos; puede migrarse a `brand` sin cambio visual.
+
 - **Q3 y Q4** siguen abiertas.
 
 Relacionados: [LOGIN MÓVIL](mobile/LOGIN.md), [ARCHITECTURE](ARCHITECTURE.md), [DECISIONS](DECISIONS.md) (D-11 a D-15), [PENDIENTES](PENDIENTES.md).

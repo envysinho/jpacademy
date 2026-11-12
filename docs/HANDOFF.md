@@ -85,3 +85,11 @@ Ver [`PENDIENTES.md`](PENDIENTES.md) (lista única).
 - Nuevos: `apps/mobile/src/theme/logos.ts` (mapa `logos`), `docs/ASSETS.md`. Modificados: `README.md`, `docs/PENDIENTES.md`.
 - Los logos aún no se usan en ninguna pantalla. Uso y reglas en `docs/ASSETS.md`.
 - Siguiente acción: usar `logos.horizontal` en `Sidebar.tsx` cuando el usuario lo indique.
+
+### 2026-11-12 UTC — Claude (sidebar con estética del login)
+
+- Modificados: `apps/mobile/src/features/dashboard/components/Sidebar.tsx` (rediseño visual; se conserva rol, navegación y plegado), `apps/mobile/src/theme/index.ts` (tokens `brand`), `apps/mobile/src/theme/logos.ts` (corregido: `require` con nombre base, no `@1x`).
+- Docs: `DASHBOARD.md` §0/§0.1, `ASSETS.md` (regla de `require` corregida), `DECISIONS.md` D-12, `PENDIENTES.md`, `mobile/LOGIN.md` (`expo-linear-gradient` ahora en uso).
+- Verificado: typecheck y lint; captura en `Tablet_Academy_8_7` en modo plegado y desplegado.
+- Nota: `MathBackground.tsx` tiene un aviso de Prettier previo, no tocado.
+- Siguiente acción: conectar los ítems del sidebar a rutas de `(app)`.
