@@ -1,0 +1,29 @@
+import {
+  BookOpen,
+  CalendarDays,
+  ClipboardList,
+  House,
+  TrendingUp,
+  type LucideIcon,
+} from 'lucide-react-native';
+
+export type DashboardRole = 'STUDENT' | 'TEACHER' | 'ADMIN';
+
+export type SidebarNavigationItem = {
+  icon: LucideIcon;
+  key: string;
+  label: string;
+};
+
+/** Navegación temporal por rol. Se completará mientras diseñamos cada dashboard. */
+export const roleNavigation: Record<DashboardRole, SidebarNavigationItem[]> = {
+  STUDENT: [
+    { icon: House, key: 'home', label: 'Inicio' },
+    { icon: BookOpen, key: 'courses', label: 'Cursos' },
+    { icon: ClipboardList, key: 'tasks', label: 'Tareas' },
+    { icon: CalendarDays, key: 'calendar', label: 'Calendario' },
+    { icon: TrendingUp, key: 'progress', label: 'Progreso' },
+  ],
+  TEACHER: [],
+  ADMIN: [],
+};

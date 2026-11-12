@@ -4,16 +4,18 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { colors } from '@/theme';
 
+import type { DashboardRole } from '../config/roleNavigation';
+
 import { Sidebar } from './Sidebar';
 
 /** Estructura común del dashboard (sidebar + contenido). El contenido se recibe como hijos. */
-export function DashboardShell({ children }: { children?: ReactNode }) {
+export function DashboardShell({ children, role }: { children?: ReactNode; role: DashboardRole }) {
   return (
     <>
       <StatusBar barStyle="dark-content" />
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.root}>
-          <Sidebar />
+          <Sidebar role={role} />
           <View style={styles.content}>{children}</View>
         </View>
       </SafeAreaView>
