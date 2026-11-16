@@ -2,6 +2,8 @@ export const colors = {
   background: '#F8FAFC',
   surface: '#FFFFFF',
   border: '#E2E8F0',
+  /** Borde de campos de formulario (≥ 3:1 sobre blanco, WCAG 1.4.11). */
+  borderStrong: '#878894',
   text: '#0F172A',
   textMuted: '#64748B',
   primary: '#2563EB',
