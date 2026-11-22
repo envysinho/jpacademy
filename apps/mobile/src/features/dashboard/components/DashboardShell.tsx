@@ -9,13 +9,23 @@ import type { DashboardRole } from '../config/roleNavigation';
 import { Sidebar } from './Sidebar';
 
 /** Estructura común del dashboard (sidebar + contenido). El contenido se recibe como hijos. */
-export function DashboardShell({ children, role }: { children?: ReactNode; role: DashboardRole }) {
+export function DashboardShell({
+  activeKey,
+  children,
+  onSelect,
+  role,
+}: {
+  activeKey: string;
+  children?: ReactNode;
+  onSelect: (key: string) => void;
+  role: DashboardRole;
+}) {
   return (
     <>
       <StatusBar barStyle="dark-content" />
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.root}>
-          <Sidebar role={role} />
+          <Sidebar activeKey={activeKey} onSelect={onSelect} role={role} />
           <View style={styles.content}>{children}</View>
         </View>
       </SafeAreaView>

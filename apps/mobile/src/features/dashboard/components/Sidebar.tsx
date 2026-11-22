@@ -20,12 +20,18 @@ const DECORATIVE_SYMBOLS = [
 ] as const;
 
 /** Barra lateral reutilizable por rol, con la estética del login (azul de marca + acento naranja). */
-export function Sidebar({ role }: { role: DashboardRole }) {
+export function Sidebar({
+  activeKey,
+  onSelect,
+  role,
+}: {
+  activeKey: string;
+  onSelect: (key: string) => void;
+  role: DashboardRole;
+}) {
   const [isCollapsed, setIsCollapsed] = useState(true);
   const navigationItems = roleNavigation[role];
   const roleLabel = roleLabels[role];
-  // Temporal: el ítem activo es estado local hasta que la navegación use rutas reales.
-  const [activeKey, setActiveKey] = useState(navigationItems[0]?.key);
 
   return (
     <LinearGradient
@@ -81,7 +87,7 @@ export function Sidebar({ role }: { role: DashboardRole }) {
                 accessibilityRole="button"
                 accessibilityState={{ selected: isActive }}
                 hitSlop={4}
-                onPress={() => setActiveKey(key)}
+                onPress={() => onSelect(key)}
                 style={({ pressed }) => [
                   styles.navigationButton,
                   !isCollapsed && styles.navigationButtonExpanded,
