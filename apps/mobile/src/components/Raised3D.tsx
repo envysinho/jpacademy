@@ -17,6 +17,8 @@ const BRAND_PALETTE: Palette = { base: brand.blue, soft: brand.blueSoft };
  * - `primary`: cara con degradado de marca + brillo; canto `blueNight`. Para lo seleccionado.
  * - `soft`: cara `soft` con escena 3D; canto del color `base` translúcido. Para acciones.
  * - `white`: cara blanca con borde; canto `colors.border`. Para botones secundarios.
+ * - `accent`: cara naranja de marca + brillo; canto `accentPressed`. Solo para la acción
+ *   principal de una pantalla de marca (login), una por zona.
  *
  * No es pulsable por sí misma: va dentro de un `Pressable`, que le pasa `pressed` para
  * hundir la cara.
@@ -38,7 +40,7 @@ export function Raised3D({
   pressed?: boolean;
   radius?: number;
   style?: StyleProp<ViewStyle>;
-  variant?: 'primary' | 'soft' | 'white';
+  variant?: 'accent' | 'primary' | 'soft' | 'white';
 }) {
   const face = [
     styles.face,
@@ -54,13 +56,16 @@ export function Raised3D({
           styles.edge,
           { borderRadius: radius, top: depth },
           variant === 'primary' && styles.edgePrimary,
+          variant === 'accent' && styles.edgeAccent,
           variant === 'white' && styles.edgeWhite,
           variant === 'soft' && { backgroundColor: palette.base, opacity: 0.28 },
         ]}
       />
-      {variant === 'primary' ? (
+      {variant === 'primary' || variant === 'accent' ? (
         <LinearGradient
-          colors={[brand.blue, brand.blueDeep]}
+          colors={
+            variant === 'primary' ? [brand.blue, brand.blueDeep] : [brand.accent, brand.accent]
+          }
           end={{ x: 1, y: 1 }}
           start={{ x: 0, y: 0 }}
           style={face}
@@ -86,6 +91,7 @@ export function Raised3D({
 const styles = StyleSheet.create({
   edge: { bottom: 0, left: 0, position: 'absolute', right: 0 },
   edgePrimary: { backgroundColor: brand.blueNight },
+  edgeAccent: { backgroundColor: brand.accentPressed },
   edgeWhite: { backgroundColor: colors.border },
   face: { overflow: 'hidden' },
   faceWhite: { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1 },

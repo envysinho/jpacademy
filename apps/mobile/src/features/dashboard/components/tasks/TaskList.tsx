@@ -1,25 +1,62 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { Card } from '@/components/Card';
 import { SoftScene } from '@/components/SoftScene';
 import { brand, colors, fontFamily, radius, shadows, spacing } from '@/theme';
 
-import type { StudentTask, TaskGroup } from '../../mocks/studentTasks';
+import type { StudentTask } from '../../mocks/studentTasks';
 import { CourseBanner } from '../courses/CourseBanner';
 
-import { groupLabels, taskChip } from './taskVisuals';
+import { formatShortDate, taskChip } from './taskVisuals';
 
-const GROUP_ORDER: TaskGroup[] = ['today', 'week', 'later'];
+export type TaskListMode = 'grouped' | 'plain' | 'history';
+
+/** Medidas fijas para calcular cuántas filas caben sin scroll. */
+const ROW_HEIGHT = 76;
+const ROW_GAP = 6;
+const TITLE_HEIGHT = 16;
+const SECTION_GAP = 16;
+
+type Section = { items: StudentTask[]; title?: string };
+
+/**
+ * Recorta las secciones a lo que cabe en `height`, sin filas a medias: lo que no entra no se
+ * muestra (la lista no se desplaza).
+ */
+function fitSections(sections: Section[], height: number): Section[] {
+  const fitted: Section[] = [];
+  let used = 0;
+  for (const section of sections) {
+    const header =
+      (fitted.length > 0 ? SECTION_GAP : 0) + (section.title ? TITLE_HEIGHT + ROW_GAP : 0);
+    if (used + header + ROW_HEIGHT > height) break;
+    used += header;
+    const items: StudentTask[] = [];
+    for (const item of section.items) {
+      const cost = (items.length > 0 ? ROW_GAP : 0) + ROW_HEIGHT;
+      if (used + cost > height) break;
+      used += cost;
+      items.push(item);
+    }
+    fitted.push({ ...section, items });
+    if (items.length < section.items.length) break;
+  }
+  return fitted;
+}
 
 function TaskRow({
+  isHistory,
   isSelected,
   onPress,
   task,
 }: {
+  isHistory: boolean;
   isSelected: boolean;
   onPress: () => void;
   task: StudentTask;
 }) {
+  const historyDate = task.gradedAt ?? task.submittedAt ?? task.dueDate;
   const chip = taskChip(task);
   const ChipIcon = chip.icon;
 
@@ -49,6 +86,7 @@ function TaskRow({
         </Text>
         <Text numberOfLines={1} style={styles.rowSubtitle}>
           {task.subject} · {task.type}
+          {isHistory && historyDate ? ` · ${formatShortDate(historyDate)}` : ''}
         </Text>
       </View>
       <View style={[styles.chip, { backgroundColor: chip.background }]}>
@@ -61,53 +99,90 @@ function TaskRow({
   );
 }
 
-/** Lista de tareas; las pendientes se agrupan por vencimiento (Hoy · Esta semana · Más adelante). */
+/**
+ * Lista de tareas. `grouped`: atrasadas primero y luego Hoy · Esta semana · Más adelante.
+ * `history`: entregas recientes con su nota o «Por calificar». `plain`: sin agrupar.
+ */
 export function TaskList({
-  grouped,
+  emptyMessage,
+  fill = false,
+  mode,
   onSelect,
   selectedId,
   tasks,
 }: {
-  grouped: boolean;
+  emptyMessage: string;
+  /**
+   * Ocupa el alto disponible y muestra solo las filas que caben, sin scroll (Tareas en un
+   * viewport).
+   */
+  fill?: boolean;
+  mode: TaskListMode;
   onSelect: (id: string) => void;
   selectedId?: string;
   tasks: StudentTask[];
 }) {
-  const sections = grouped
-    ? GROUP_ORDER.map((group) => ({
-        items: tasks.filter((task) => task.group === group),
-        title: groupLabels[group],
-      })).filter((section) => section.items.length > 0)
-    : [{ items: tasks, title: undefined }];
+  const [height, setHeight] = useState(0);
+  // Pendientes: «Hoy» y debajo «Próximas».
+  const sections: Section[] =
+    mode === 'grouped'
+      ? [
+          {
+            items: tasks.filter((task) => task.group === 'today'),
+            title: 'Hoy',
+          },
+          {
+            items: tasks.filter((task) => task.group !== 'today'),
+            title: 'Próximas',
+          },
+        ].filter((section) => section.items.length > 0)
+      : [{ items: tasks }];
+
+  const rows = (list: Section[]) =>
+    list.map(({ items, title }) => (
+      <View key={title ?? 'all'} style={styles.section}>
+        {title && <Text style={styles.sectionTitle}>{title}</Text>}
+        {items.map((task) => (
+          <TaskRow
+            key={task.id}
+            isHistory={mode === 'history'}
+            isSelected={task.id === selectedId}
+            onPress={() => onSelect(task.id)}
+            task={task}
+          />
+        ))}
+      </View>
+    ));
 
   return (
-    <Card style={styles.card}>
-      {tasks.length === 0 && <Text style={styles.empty}>No hay tareas en esta sección.</Text>}
-      {sections.map(({ items, title }) => (
-        <View key={title ?? 'all'} style={styles.section}>
-          {title && <Text style={styles.sectionTitle}>{title}</Text>}
-          {items.map((task) => (
-            <TaskRow
-              key={task.id}
-              isSelected={task.id === selectedId}
-              onPress={() => onSelect(task.id)}
-              task={task}
-            />
-          ))}
+    <Card style={[styles.card, fill && styles.cardFill]}>
+      {tasks.length === 0 && <Text style={styles.empty}>{emptyMessage}</Text>}
+      {fill ? (
+        <View
+          onLayout={(event) => setHeight(event.nativeEvent.layout.height)}
+          style={styles.fitted}
+        >
+          {height > 0 && rows(fitSections(sections, height))}
         </View>
-      ))}
+      ) : (
+        <ScrollView contentContainerStyle={styles.content}>{rows(sections)}</ScrollView>
+      )}
     </Card>
   );
 }
 
 const styles = StyleSheet.create({
-  card: { gap: spacing.md, padding: spacing.md },
-  section: { gap: 6 },
+  card: { padding: spacing.md },
+  cardFill: { flex: 1 },
+  fitted: { flex: 1, gap: SECTION_GAP, overflow: 'hidden' },
+  content: { gap: SECTION_GAP },
+  section: { gap: ROW_GAP },
   sectionTitle: {
     color: colors.textMuted,
     fontFamily: fontFamily.bold,
     fontSize: 12,
     letterSpacing: 0.6,
+    lineHeight: TITLE_HEIGHT,
     paddingHorizontal: spacing.xs,
     textTransform: 'uppercase',
   },
@@ -116,7 +191,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.chip,
     flexDirection: 'row',
     gap: spacing.md,
-    minHeight: 76,
+    height: ROW_HEIGHT,
     overflow: 'hidden',
     padding: 10,
   },

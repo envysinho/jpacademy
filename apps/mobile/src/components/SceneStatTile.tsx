@@ -8,46 +8,66 @@ import { SoftScene } from './SoftScene';
 
 /**
  * Resumen con escena 3D: fondo `soft` con luz y colinas, cifra a la izquierda e icono 3D a la
- * derecha. Compartido por Calendario y Tareas.
+ * derecha. Compartido por Calendario y Tareas. Con `selected` funciona como selector: borde
+ * grueso del color del tipo y barra inferior (no depende solo del color).
  */
 export function SceneStatTile({
   caption,
+  chevron = true,
+  compact = false,
   kind,
   label,
+  onPress,
   palette,
+  selected,
   value,
 }: {
   caption: string;
+  /** Flecha junto al pie (indica que la tarjeta lleva a algún sitio). */
+  chevron?: boolean;
+  /** Versión baja (pantallas que deben caber en un viewport). */
+  compact?: boolean;
   kind: Clay3DKind;
   label: string;
+  onPress?: () => void;
   palette: ClayPalette;
+  /** `undefined` = no es seleccionable. */
+  selected?: boolean;
   value: number | string;
 }) {
+  const isSelectable = selected !== undefined;
+
   return (
     <Pressable
       accessibilityLabel={`${label}: ${value}, ${caption}`}
-      accessibilityRole="button"
-      onPress={() => undefined}
+      accessibilityRole={isSelectable ? 'tab' : onPress ? 'button' : 'summary'}
+      accessibilityState={isSelectable ? { selected } : undefined}
+      disabled={!onPress}
+      onPress={onPress}
       style={({ pressed }) => [
         styles.tile,
         { backgroundColor: palette.soft },
+        compact && styles.tileCompact,
+        isSelectable && styles.selectable,
+        selected && { borderColor: palette.ink },
         pressed && styles.pressed,
       ]}
     >
       <SoftScene base={palette.base} />
+      {selected && <View style={[styles.selectedBar, { backgroundColor: palette.ink }]} />}
 
       <View style={styles.text}>
         {/* Sin truncar: con el sidebar desplegado las etiquetas pasan a dos líneas. */}
         <Text style={styles.label}>{label}</Text>
-        <Text style={styles.value}>{value}</Text>
+        <Text style={[styles.value, compact && styles.valueCompact]}>{value}</Text>
         <View style={styles.captionRow}>
           <Text style={styles.caption}>{caption}</Text>
-          <ChevronRight color={palette.ink} size={14} strokeWidth={2.4} />
+          {chevron && <ChevronRight color={palette.ink} size={14} strokeWidth={2.4} />}
         </View>
       </View>
 
       <View style={styles.icon}>
-        <Clay3DIcon kind={kind} palette={palette} size={68} />
+        <Clay3DIcon kind={kind} palette={palette} size={compact ? 56 : 68} />
       </View>
     </Pressable>
   );
@@ -67,6 +87,10 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     ...shadows.card,
   },
+  tileCompact: { minHeight: 92, paddingVertical: 12 },
+  valueCompact: { fontSize: 28, lineHeight: 34 },
+  selectable: { borderColor: 'transparent', borderWidth: 2 },
+  selectedBar: { bottom: 0, height: 5, left: 0, position: 'absolute', right: 0 },
   pressed: { opacity: 0.85 },
   text: { flex: 1, gap: 2 },
   label: { color: colors.text, fontFamily: fontFamily.semibold, fontSize: 14 },

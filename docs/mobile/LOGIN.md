@@ -2,7 +2,7 @@
 
 Documento técnico y visual del prototipo de inicio de sesión de la aplicación Android para alumnos. El prototipo se considera **finalizado a nivel de frontend visual**; la autenticación, recuperación de contraseña y creación de cuentas todavía no están conectadas al API.
 
-Última revisión: 2026-11-11 (UTC).
+Última revisión: 2026-11-27 (UTC). Rediseño 3D: §4 y §9.
 
 ## 1. Alcance actual
 
@@ -38,6 +38,7 @@ apps/mobile/
     ├── features/
     │   └── auth/
     │       ├── components/
+    │       │   ├── FloatingClay.tsx
     │       │   └── MathBackground.tsx
     │       └── screens/
     │           └── LoginScreen.tsx
@@ -55,6 +56,7 @@ apps/mobile/
 | `src/app/_layout.tsx`                             | Carga Inter, mantiene el splash hasta que las fuentes estén listas, configura la barra de estado y el Stack raíz. |
 | `src/features/auth/screens/LoginScreen.tsx`       | Composición del formulario, estado local de los campos, comportamiento visual y estilos de la tarjeta.            |
 | `src/features/auth/components/MathBackground.tsx` | Fondo SVG matemático, decorativo y sin interacción.                                                               |
+| `src/features/auth/components/FloatingClay.tsx`   | Icono 3D (`Clay3DIcon`) que flota despacio junto al logo; decorativo.                                             |
 | `src/theme/index.ts`                              | Tokens compartidos de color, espaciado, radio y familias tipográficas.                                            |
 
 El grupo `(auth)` organiza las rutas, pero no forma parte de la URL. Por eso `src/app/(auth)/login.tsx` corresponde a `/login` y no a `/auth/login`.
@@ -88,13 +90,12 @@ La separación permite que, cuando exista una sesión persistida, `index.tsx` pu
 Incluye:
 
 - Degradado principal azul: `#1F1FFF` → `#0B0BC4` → `#06065E`.
-- Resplandor cian y resplandor violeta mediante gradientes radiales.
+- Resplandor cian y resplandor violeta mediante gradientes radiales (respiran despacio).
 - Cuadrícula matemática con líneas principales y secundarias.
-- Ejes cartesianos con indicadores `x` e `y`.
-- Curva senoidal generada por código.
-- Parábola discontinua y punto de vértice.
 - Círculo con radio, triángulo rectángulo y transportador.
-- Símbolos matemáticos decorativos: `π`, `∑`, `∫`, `√x`, `∞`, `Δ`, `θ`, `÷`, `x²` y `≈`.
+- Símbolos matemáticos flotantes: `π`, `∑`, `∫`, `√x`, `∞`, `Δ`, `θ`, `÷`, `x²` y `≈`.
+
+**Retirado (2026-11-27, por decisión del usuario):** ejes cartesianos con `x`/`y`, curva senoidal en movimiento y parábola discontinua con su vértice pulsante. Se superponían al logo y a los objetos 3D.
 
 El componente usa `pointerEvents="none"`, por lo que nunca bloquea los controles, y está envuelto con `memo` para evitar renderizados innecesarios. Las rutas de las funciones y las colecciones de líneas se calculan fuera del componente.
 
@@ -107,21 +108,24 @@ El componente usa `pointerEvents="none"`, por lo que nunca bloquea los controles
 
 La configuración principal de Expo fija orientación horizontal, pero este ajuste evita que la interfaz se rompa en ventanas o dispositivos más estrechos.
 
-### Tarjeta de login
+### Panel del logo (estilo 3D)
 
-Valores principales del prototipo:
+Logo vertical con contorno blanco (470 dp de alto) y tres `FloatingClay` con los colores del escudo, el mismo recurso del sidebar del alumno: libro rojo (arriba a la izquierda), trofeo naranja (arriba a la derecha) y calendario verde (izquierda). Flotan ±10 dp en bucle (2,6 s por tramo, desfasados) con el driver nativo; quietos con «reducir movimiento».
 
-| Propiedad                            | Valor                                  |
-| ------------------------------------ | -------------------------------------- |
-| Ancho máximo                         | `520` px                               |
-| Padding interno                      | `40` px                                |
-| Radio                                | `32` px                                |
-| Fondo                                | `#ffffffe2`                            |
-| Elevación Android                    | `16`                                   |
-| Sombra                               | `#020230`, opacidad `0.35`, radio `40` |
-| Separación horizontal de la pantalla | `64` px                                |
+### Tarjeta de login (estilo 3D, 2026-11-27)
 
-Los campos tienen 62 px de altura, radio de 18 px y borde `#878894`. El botón principal utiliza naranja `#f67700`, con estado presionado `#b55800`. La recuperación de contraseña usa el mismo naranja como acento.
+Misma estructura (título, correo, contraseña, enlace, botón, «o», registro) con el lenguaje 3D de la app (D-16):
+
+| Elemento        | Valor                                                                                                                                 |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Tarjeta         | «Arcilla» blanca: cara `colors.surface`, radio 32, padding 34/40, ancho máx. 520, canto `brand.blueSoft` de 10 dp, sombra `blueNight` |
+| Cabecera        | Azulejo 72 dp `blueSoft` + `SoftScene` + `Clay3DIcon student` (paleta de marca) junto a «Iniciar sesión» (36 extrabold)               |
+| Campos          | 60 dp, radio 18, fondo `colors.background`, borde `borderStrong`; enfocado: fondo blanco y borde `brand.blue` de 2 dp                 |
+| Icono del campo | Chip `Raised3D` de 38 dp (radio 12, canto 3): `soft` de marca en reposo, `primary` con icono blanco al enfocar                        |
+| Botón principal | `Raised3D variant="accent"` (cara naranja + brillo, canto `accentPressed` de 5 dp); hundido mientras «Ingresando…»                    |
+| Error           | Aviso `categories.red.soft`, radio 14, icono `CircleAlert` + texto `colors.danger`                                                    |
+| Registro        | `Raised3D variant="white"` (canto 4), icono `UserPlus` en `blueDeep`                                                                  |
+| Enlace          | «¿Olvidaste tu contraseña?» en `blueDeep` (el naranja queda solo para el botón)                                                       |
 
 ## 5. Controles y comportamiento
 
@@ -178,6 +182,7 @@ Se utiliza `lucide-react-native` para mantener un lenguaje visual consistente y 
 | `LockKeyhole`    | Campo de contraseña          |
 | `Eye` / `EyeOff` | Mostrar u ocultar contraseña |
 | `ArrowRight`     | Acción de iniciar sesión     |
+| `CircleAlert`    | Aviso de error               |
 | `UserPlus`       | Acción de registro           |
 
 Lucide se apoya en `react-native-svg`. No se usan símbolos Unicode como sustitutos de iconos.
@@ -206,6 +211,7 @@ Durante el prototipado se realizaron estas iteraciones:
 8. Se retiraron mensajes temporales de error y acciones “próximamente”.
 9. El fondo final se convirtió en una composición matemática SVG azul, más alineada con la identidad educativa.
 10. Se añadió respuesta básica por ancho para conservar la tarjeta usable fuera del formato principal.
+11. (2026-11-27) Rediseño con el estilo 3D de la app sin cambiar estructura ni lógica: tarjeta de arcilla con canto, icono 3D en la cabecera, chips 3D en los campos, botones `Raised3D` y objetos 3D flotando junto al logo. Del fondo se retiraron ejes y curvas; se conserva la cuadrícula.
 
 ## 10. Cómo modificar el prototipo
 
@@ -227,7 +233,6 @@ Editar `src/features/auth/components/MathBackground.tsx`:
 - Gradiente `bg`: paleta principal.
 - `glowCyan` y `glowViolet`: luces ambientales.
 - `GRID`: densidad de la cuadrícula.
-- `sinePath` y `parabolaPath`: funciones dibujadas.
 - `symbols`: símbolo, posición, tamaño, opacidad y rotación.
 
 ### Tipografía y tokens

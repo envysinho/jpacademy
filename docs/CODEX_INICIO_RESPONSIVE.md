@@ -2,6 +2,8 @@
 
 Fecha: 2026-11-21 (UTC). Encarga: Claude (sesión del dashboard móvil). Ejecuta: Codex.
 
+> **Encargo completado** (ver HANDOFF, 2026-11-21 Codex). Se conserva como referencia. Desde 2026-11-26 el desarrollo es en Linux nativo: la sección «Cómo verificar» ya está actualizada; las menciones históricas a WSL/Windows no aplican.
+
 ## Contexto
 
 El Inicio del alumno (`apps/mobile`) ya está terminado a nivel visual, con datos ficticios y sin lógica. Se ve bien con el **sidebar plegado** (72 dp). Al **desplegar el sidebar** (240 dp), el área de contenido pasa de ~1070 dp a ~900 dp de ancho y algunas tarjetas se deforman. El encargo es **solo pulir eso**: no rediseñar, no cambiar contenido, colores ni estructura.
@@ -13,7 +15,7 @@ Lee antes de tocar nada:
 
 ## Reglas
 
-- Trabaja **solo en WSL**: `~/jpacademy`. No edites `d:\jpacademy` (copia de Windows).
+- Trabaja en el repositorio Linux (`~/Projects/jpacademy`).
 - **No hagas commits, push ni PR.**
 - No añadas dependencias. Animaciones solo con `Animated` nativo (D-04).
 - Colores, radios y espaciado solo desde `@/theme`; **ningún hex suelto**. Si necesitas un valor nuevo, documéntalo en `ESTILO_VISUAL.md`.
@@ -48,24 +50,23 @@ Enfoque sugerido: medir el ancho del área de contenido con `onLayout` en `Stude
 
 ## Cómo verificar
 
-Entorno (WSL, Node vía nvm, pnpm vía corepack):
+Entorno: Linux nativo (Arch), Node 24.22.2 y pnpm 10 (ver `docs/DEVELOPMENT.md`).
 
 ```bash
-export NVM_DIR=~/.nvm; . ~/.nvm/nvm.sh; cd ~/jpacademy
-corepack pnpm --filter @academy/mobile typecheck
-corepack pnpm --filter @academy/mobile lint
+pnpm --filter @academy/mobile typecheck
+pnpm --filter @academy/mobile lint
 npx prettier@3 --check apps/mobile/src/features/dashboard apps/mobile/src/components
 ```
 
-Emulador: el AVD `Tablet_Academy_8_7` corre en **Windows**, no en WSL (el `adb` de WSL no lo ve). Metro corre en WSL en el puerto 8081 y la app se abre en Expo Go con:
+Emulador: `emulator -avd Tablet_Academy_8_7` y Metro con `pnpm dev:mobile` (puerto 8081), todo en la misma máquina. Abre la app en Expo Go con:
 
-```powershell
-& "C:\Users\lilyc\AppData\Local\Android\Sdk\platform-tools\adb.exe" shell am start -a android.intent.action.VIEW -d "exp://10.0.2.2:8081"
+```bash
+adb shell am start -a android.intent.action.VIEW -d "exp://10.0.2.2:8081"
 ```
 
-Con ese mismo `adb.exe`:
+Con el mismo `adb`:
 
-- Captura: `adb exec-out screencap -p > captura.png` (desde un directorio de Windows, no UNC).
+- Captura: `adb exec-out screencap -p > captura.png`.
 - Plegar/desplegar el sidebar: `adb shell input tap 41 80` (el escudo).
 - Volver arriba: `adb shell input swipe 900 200 900 750 300`.
 

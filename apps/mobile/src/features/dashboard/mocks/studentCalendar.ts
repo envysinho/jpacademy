@@ -1,110 +1,87 @@
-/** Datos ficticios del Calendario del alumno. Solo visual; se reemplazan por la API más adelante. */
+/**
+ * DATOS DE DESARROLLO (mock) del Calendario. La academia es **asincrónica**: cada alumno avanza a
+ * su ritmo, así que no hay clases diarias ni fechas de lecciones. Solo se muestran eventos con
+ * fecha: entregas (salen de las tareas con `dueDate`), asesorías agendadas y simulacros o
+ * actividades especiales. Las solicitudes de ayuda inmediatas no van aquí (irán en Atenciones).
+ */
 
-export type EventType = 'class' | 'task' | 'help';
-export type EventIcon = 'book' | 'flask' | 'task' | 'help';
+import { studentTasksMock } from './studentTasks';
 
-export const studentCalendarMock = {
-  stats: [
-    { caption: 'Por entregar', id: 's2', label: 'Tareas próximas', type: 'task', value: 3 },
-    { caption: 'Programadas', id: 's3', label: 'Clases', type: 'class', value: 8 },
-    {
-      caption: 'Pendiente de docente',
-      id: 's4',
-      label: 'Solicitudes de ayuda',
-      type: 'help',
-      value: 1,
-    },
-  ] satisfies { caption: string; id: string; label: string; type: EventType; value: number }[],
+export type EventType = 'task' | 'help' | 'activity';
 
-  month: {
-    title: 'Septiembre, 2025',
-    /** Septiembre de 2025 empieza en lunes y tiene 30 días. */
-    firstWeekday: 0,
-    days: 30,
-    today: 16,
-    /** Tipos de evento por día (puntos bajo el número). */
-    events: {
-      10: ['class'],
-      12: ['task'],
-      16: ['class', 'task', 'help'],
-      18: ['help'],
-      23: ['task'],
-    } as Record<number, EventType[]>,
-  },
-
-  day: {
-    title: 'Hoy, mar. 16 de septiembre',
-    items: [
-      {
-        duration: '60 min',
-        icon: 'book',
-        id: 'd1',
-        subtitle: 'Clase en línea · Unidad 3',
-        time: '08:00',
-        title: 'Matemática',
-        type: 'class',
-      },
-      {
-        duration: '60 min',
-        icon: 'flask',
-        id: 'd2',
-        subtitle: 'Clase en línea · El ciclo del agua',
-        time: '09:30',
-        title: 'Ciencia',
-        type: 'class',
-      },
-      {
-        icon: 'task',
-        id: 'd3',
-        status: 'Por entregar',
-        subtitle: 'Vence hoy, 23:59',
-        time: '11:00',
-        title: 'Entrega: Funciones',
-        type: 'task',
-      },
-      {
-        duration: '30 min',
-        icon: 'help',
-        id: 'd4',
-        subtitle: 'Prof. Camila Torres',
-        time: '14:00',
-        title: 'Asesoría con el docente',
-        type: 'help',
-      },
-      {
-        duration: '60 min',
-        icon: 'book',
-        id: 'd5',
-        subtitle: 'Análisis de textos',
-        time: '16:00',
-        title: 'Comunicación',
-        type: 'class',
-      },
-    ] satisfies {
-      duration?: string;
-      icon: EventIcon;
-      id: string;
-      status?: string;
-      subtitle: string;
-      time: string;
-      title: string;
-      type: EventType;
-    }[],
-  },
-
-  upcoming: [
-    { id: 'u1', subtitle: 'Mié, 17 sep. · 08:00 – 09:00', title: 'Clase: Álgebra', type: 'class' },
-    {
-      id: 'u2',
-      subtitle: 'Jue, 18 sep. · Vence 23:59',
-      title: 'Entrega: Ecuaciones',
-      type: 'task',
-    },
-    {
-      id: 'u3',
-      subtitle: 'Vie, 19 sep. · 16:00 – 16:45',
-      title: 'Asesoría de dudas (grupal)',
-      type: 'help',
-    },
-  ] satisfies { id: string; subtitle: string; title: string; type: EventType }[],
+export type CalendarEvent = {
+  /** AAAA-MM-DD. */
+  date: string;
+  duration?: string;
+  id: string;
+  status?: string;
+  subtitle: string;
+  time: string;
+  title: string;
+  type: EventType;
 };
+
+/** Mes mostrado en el prototipo: septiembre de 2025 empieza en lunes y tiene 30 días. */
+export const calendarMonth = {
+  days: 30,
+  firstWeekday: 0,
+  monthIndex: 8,
+  title: 'Septiembre, 2025',
+  today: 16,
+  year: 2025,
+};
+
+/** Entregas: tareas pendientes con fecha límite (misma fuente que Tareas). */
+const deliveries: CalendarEvent[] = studentTasksMock
+  .filter((task) => task.status === 'pending' && task.dueDate)
+  .map((task) => ({
+    date: task.dueDate ?? '',
+    id: `due-${task.id}`,
+    status: 'Por entregar',
+    subtitle: `${task.subject} · vence 23:59`,
+    time: '23:59',
+    title: `Entrega: ${task.title}`,
+    type: 'task',
+  }));
+
+/** Asesorías y actividades con fecha (simuladas). */
+const scheduled: CalendarEvent[] = [
+  {
+    date: '2025-09-16',
+    duration: '30 min',
+    id: 'h1',
+    subtitle: 'Con tu docente · Álgebra',
+    time: '16:00',
+    title: 'Asesoría agendada',
+    type: 'help',
+  },
+  {
+    date: '2025-09-20',
+    duration: '90 min',
+    id: 'a1',
+    subtitle: 'Matemática y Comunicación',
+    time: '09:00',
+    title: 'Simulacro de examen',
+    type: 'activity',
+  },
+  {
+    date: '2025-09-23',
+    duration: '30 min',
+    id: 'h2',
+    subtitle: 'Con tu docente · Ciencia',
+    time: '15:30',
+    title: 'Asesoría agendada',
+    type: 'help',
+  },
+  {
+    date: '2025-09-27',
+    duration: '60 min',
+    id: 'a2',
+    subtitle: 'Feria de ciencias virtual',
+    time: '10:00',
+    title: 'Actividad especial',
+    type: 'activity',
+  },
+];
+
+export const reinforcementCalendarEvents: CalendarEvent[] = [...deliveries, ...scheduled];

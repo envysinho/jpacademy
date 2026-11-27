@@ -197,3 +197,99 @@ Ver [`PENDIENTES.md`](PENDIENTES.md) (lista única).
 - Resultado: curso de muestra (mismo contenido para cualquier curso) con modo Lección (video con portada 3D, recursos/ejercicios/notas y roadmap con línea de avance) y modo Asistente IA (chat con IA, tarea y paso al docente mediante solicitud de ayuda; sin videollamadas, por la decisión anterior del usuario). Solo visual: enviar, subir y descargar no hacen nada.
 - Verificado: typecheck y lint sin errores, Prettier aplicado; revisado en `Tablet_Academy_8_7`: Lección, roadmap, Asistente IA y flujo «Pedir ayuda» → pestaña Docente.
 - Pendiente: vista de Progreso; navegación con rutas reales (DASHBOARD.md §6); sesión y datos de la API.
+
+### 2026-11-26 UTC — Claude (revisión de documentación y cambio a Linux nativo)
+
+- Contexto: el desarrollo pasa a **Linux nativo** (sin WSL ni copia en Windows). Las entradas anteriores que mencionan WSL/Windows son históricas.
+- Modificados: `README.md` (estado y lista de docs), `docs/DASHBOARD.md` (§0 estado real, Q3), `docs/PENDIENTES.md` (revisión 2026-11-26), `docs/DECISIONS.md` (D-16 a D-18), `docs/CODEX_INICIO_RESPONSIVE.md` (marcado como completado, verificación en Linux), `docs/HANDOFF.md`.
+- Sin cambios de código. Nota: las entradas del Calendario del 2026-11-21 que citan «videollamada» quedaron superadas por la entrada «Calendario premium 3D, sin videollamadas».
+- Siguiente acción: vista de Progreso y navegación por rutas reales.
+
+### 2026-11-26 UTC — Claude (sidebar del alumno con iconos 3D)
+
+- Modificados: `features/dashboard/config/roleNavigation.ts` (campo opcional `clay`, solo en `STUDENT`), `features/dashboard/components/Sidebar.tsx` (usa `Clay3DIcon` si el ítem define `clay`), `docs/ESTILO_VISUAL.md` §6.1.
+- Forma, medidas y degradado sin cambios; docente y administrador siguen con iconos Lucide.
+- Verificado: typecheck y lint sin errores. **No revisado todavía en el emulador** (plegado y desplegado).
+
+### 2026-11-26 UTC — Claude (refinamiento UX/UI del alumno, ESTUDIANTE_UX)
+
+- Fuente: `EdTech_Student_UX_UI_Claude.zip` (raíz del repo, sin versionar); especificación copiada a `docs/ESTUDIANTE_UX.md` sin las capturas.
+- Nuevos: `screens/{StudentProgress,TaskWorkspace}.tsx`; `components/home/RankingCard.tsx`; `components/progress/{ProgressCards,ProgressModals}.tsx`; `data/{studentSelectors.ts,learningRules.ts,StudentSession.tsx}`; `mocks/studentProgress.ts`.
+- Eliminados: `components/home/CoursesCard.tsx` (sustituida por Ranking) y `components/calendar/UpcomingEventsCard.tsx` (Próximos eventos).
+- Modificados: `DashboardScreen` (navegación entre secciones, espacio de resolución, Progreso), Inicio (`StudentHome`, `ResumeCard`), Cursos (`StudentCourses`, tarjetas), detalle (`CourseDetail`, `LessonPanel`, `RoadmapCard`, `SidePanels`, `ChatPanel`), Tareas (`StudentTasks`, `TaskList`, `TaskDetail`, `taskVisuals`), Calendario (`StudentCalendar`, `MiniCalendar`, `DayAgenda`), `components/SceneStatTile.tsx` (seleccionable, chevron opcional) y los mocks de cursos, tareas, detalle, Inicio y calendario. Sidebar sin cambios.
+- Verificado: `typecheck`, `lint` y Prettier de `@academy/mobile` correctos. Revisado en `Tablet_Academy_8_7`: Inicio, «Continúa aprendiendo» → detalle, Lección/Recursos, Resolver tarea, envío al chat, mismo historial desde Tareas, entrega (intento 2 de 3, «En revisión» demo), las cuatro vistas de Tareas, Calendario en un viewport (sidebar desplegado), búsqueda sin tildes, Progreso, tarjeta académica y clasificación completa.
+- No revisado: vista de lista de Cursos tras los cambios, apilado < 760 dp, teclado abierto en el chat, estados sin datos (activity `null`, sin ranking) más allá del código.
+- Discrepancias: §7.1 menciona videollamada por Google Meet → se mantiene D-17 (D-21). Cámara/archivos no implementados (requieren dependencias nuevas). Reglas académicas abiertas listadas en `PENDIENTES.md`.
+
+### 2026-11-26 UTC — Claude (Inicio en un viewport y ranking 3D)
+
+- Modificados: `screens/StudentHome.tsx` (sin `ScrollView`; filas flexibles), `components/home/{RankingCard,StreakCard,DurationsCard,AchievementsCard,ResumeCard}.tsx`, `components/progress/ProgressCards.tsx` (usa `RankingRow3D`), `screens/DashboardScreen.tsx`, `docs/ESTILO_VISUAL.md`.
+- Ranking del Inicio con estilo 3D y **no pulsable** (ya no abre la clasificación completa, por decisión del usuario). La gráfica de horas toma el alto disponible.
+- Verificado: typecheck y lint sin errores; en `Tablet_Academy_8_7` el Inicio cabe en pantalla sin scroll con el sidebar plegado y desplegado.
+
+### 2026-11-26 UTC — Claude (Tareas y Progreso en un viewport, Logros enriquecido)
+
+- Progreso: sin «Mi evolución académica» ni «Ver clasificación completa»; todo en un viewport (filas flexibles, métricas compactas, rendimiento por curso en filas de una línea). Eliminados `EvolutionCard`, `FullRankingModal`, `weeklyAverages` y `evaluationWeeks`.
+- Tareas: un viewport; `TaskList` y `TaskDetail` con prop `fill` (scroll interno, acciones fijas).
+- Inicio · Logros (propuesta aplicada): contador «8/24», halo y destellos dorados, «Próximo: Racha de 15 días 12/15» y medallas más compactas. Datos nuevos en `mocks/student.ts` (`unlocked`, `total`, `next`).
+- `SceneStatTile`: prop `compact`.
+- Verificado: typecheck, lint y Prettier; en `Tablet_Academy_8_7` Inicio, Tareas y Progreso caben sin scroll con el sidebar plegado y desplegado.
+
+### 2026-11-26 UTC — Claude (lista de Tareas sin scroll)
+
+- `components/tasks/TaskList.tsx`: con `fill`, la lista no se desplaza; calcula las filas que caben (`fitSections`, filas de 76 dp) y oculta el resto. Pendientes = «Hoy» (incluye atrasadas resolubles) + «Próximas». Eliminado `groupLabels` de `taskVisuals.ts`.
+- Verificado en `Tablet_Academy_8_7`: Hoy (2) + Próximas (2), sin scroll; typecheck y lint correctos.
+
+### 2026-11-26 UTC — Claude (tareas vencidas no resolubles)
+
+- Regla del usuario: una tarea vencida no se puede hacer después del plazo; queda para el registro.
+- `mocks/studentTasks.ts` (sin `resolvable`; `dueDate` para ordenar), `screens/StudentTasks.tsx` (Pendientes = solo `pending`; las vencidas pasan al historial de «Entregadas», cuyo pie indica «N vencida»), `TaskList` (Hoy = solo las de hoy), `TaskDetail` (bloque rojo «Plazo vencido», sin acciones), `taskVisuals` («Vencida»), `TaskWorkspace` (no admite entrega si no está pendiente).
+- Incidencia: `TaskDetail.tsx` quedó vacío por un error de script y se reconstruyó completo; `LoginScreen.tsx` y `MathBackground.tsx` se habían reformateado con Prettier por error y se restauraron a su versión de git.
+- Verificado: typecheck y lint; en el emulador, Pendientes 4, historial con la vencida y su detalle sin acciones.
+
+### 2026-11-26 UTC — Claude (fase visual: acompañamiento escolar y calendario asincrónico)
+
+- Fuente: `docs/EdTech_Fase_Visual_Claude_Codex.md`. Detalle, componentes reutilizados y contratos: `docs/ACOMPANAMIENTO_ESCOLAR.md`.
+- Nuevos: `features/school-support/` (`mocks/schoolSupport.ts`, `components/ScanTaskModal.tsx`, `screens/{SchoolSupportScreen,SchoolHome,LearnScreen,TopicSession,SchoolTasks,SchoolProgress}.tsx`).
+- Calendario: `mocks/studentCalendar.ts` (eventos con fecha; entregas desde `studentTasks.dueDate`), `calendarVisuals.ts` (tipos task/help/activity), `MiniCalendar` (día seleccionable), `DayAgenda` (navegación de días y estado vacío), `StudentCalendar` (props `events`, `emptyAction`). Eliminado `calendar/StatTile.tsx`.
+- Archivos compartidos con Codex (cambios mínimos): `app/(app)/student-school-support.tsx` (monta `SchoolSupportScreen` en lugar del shell provisional), `Sidebar.tsx` y `DashboardShell.tsx` (prop opcional `items`), `config/roleNavigation.ts` (`schoolSupportNavigation`). No se tocó login, router ni sesión.
+- Local (no versionado): `apps/mobile/.env` con `EXPO_PUBLIC_DEMO_AUTH_ENABLED=true` para probar.
+- Verificado: typecheck y lint; en `Tablet_Academy_8_7` con `student.escolar@demo.test` (Inicio, escaneo → 2 bloques → sesión → Resolver tarea, Mis tareas, Calendario, Progreso) y `student.refuerzo@demo.test` (calendario con eventos y día vacío), incluido cerrar sesión y cambiar de cuenta.
+- No verificado: vistas apiladas < 760 dp, teclado en la búsqueda, cuentas docente/admin (son de Codex).
+
+### 2026-11-26 UTC — Claude (perfil del sidebar y tema actual en Aprender)
+
+- `Sidebar.tsx`: el pie vuelve a «Estudiante · Ver perfil»; al tocarlo abre un modal de perfil provisional con avatar 3D (`Clay3DIcon` nuevo `student`, marcador hasta tener la foto) y «Cerrar sesión» (usa `onSignOut` de Codex). Afecta a todos los roles que usan el sidebar.
+- `LearnScreen.tsx`: tarjeta destacada «Lo que estás aprendiendo» (última sesión) con «Continuar».
+- Verificado: typecheck, lint y en el emulador.
+
+### 2026-11-26 UTC — Claude (subir tarea abre el chat)
+
+- Subir tarea ahora abre directamente el chat de la tarea (Asistente IA / Docente). El asistente simulado responde con los temas encontrados y botones «Ver video: tema» y «No es ese tema»; la corrección se hace en un modal y queda registrada en el chat.
+- `ChatMessage.actions` + `ChatPanel`/`TaskWorkspace` (`onMessageAction`) y `StudentSession.appendMessages` (genéricos, sin cambio para reforzamiento). `ScanTaskModal` simplificado (origen → vista previa → subir). Mis tareas: «Entrar a la tarea»; sesión: «Ir al chat de la tarea».
+- Incidencia: Prettier sobre `features/` reformateó `MathBackground.tsx` (restaurado desde git) y `LoginScreen.tsx` (solo formato, encima de los cambios de Codex; no se pudo separar).
+- Verificado: typecheck, lint y en el emulador con `student.escolar@demo.test`.
+
+### 2026-11-26 UTC — Claude (botón «Contactar con docente»)
+
+- `SidePanels.tsx` (`TeacherHelpCard`): el botón pasa a «Contactar con docente» con icono estilo Google Meet (`components/brand/GoogleMeetIcon.tsx`, SVG propio con colores de Google; sustituir por el recurso oficial antes de producción). Mismo comportamiento: solicitud + pestaña Docente (D-17 sigue: sin videollamada).
+- `ChatPanel.tsx`: «¿Sigue sin quedar claro? Un docente puede ayudarte.» sin nombre del docente.
+- Aplica a ambas modalidades (componentes compartidos). Verificado: typecheck, lint y en el emulador.
+
+### 2026-11-26 UTC — Claude (sin docentes ficticios)
+
+- Eliminados los nombres de docentes inventados (Prof. Valeria Ríos, Prof. Camila Torres) de la UI y los mocks: el chat dice «tu docente» (aviso de solicitud, placeholder «Escribe a tu docente…»), la tarjeta «¿Necesitas a tu docente?» dice «tu docente te responderá», las asesorías del calendario dicen «Con tu docente · materia» y el avatar del docente en el chat es un icono genérico (antes iniciales «VR»). Quitado `courseDetailMock.teacher` y la prop `teacher` de `ChatPanel`, `TaskWorkspace` y `TeacherHelpCard`.
+- Aplica a ambas modalidades. Verificado: typecheck y lint; búsqueda sin coincidencias de nombres ficticios.
+
+### 2026-11-26 UTC — Claude (listas sin scroll en acompañamiento)
+
+- Nuevo `components/FitList.tsx`: lista de filas de alto fijo que se apila desde arriba y muestra solo las filas que caben enteras (sin scroll; el resto no se muestra).
+- Aplicado en acompañamiento: «Temas y competencias practicados» (Progreso, filas de 52 dp, ~7 en la tablet), «Mis tareas del colegio» (filas de 72 dp) y «Sesiones recientes» del Inicio (filas de 46 dp, 4 en la tablet).
+- Verificado: typecheck, lint y en el emulador.
+
+### 2026-11-27 UTC — Claude (login con estilo 3D)
+
+- Modificados: `features/auth/screens/LoginScreen.tsx` (solo JSX y estilos; `submit`, sesión y mensajes de Codex sin cambios), `features/auth/components/MathBackground.tsx` (retirados ejes x/y, curva seno animada, parábola y pulso del vértice; se conserva la cuadrícula), `components/Raised3D.tsx` (variante `accent`, aditiva). Nuevo: `features/auth/components/FloatingClay.tsx`.
+- Docs: `mobile/LOGIN.md` (§2, §4, §7, §9, §10), `ESTILO_VISUAL.md` (§6, §6.1, §9).
+- Verificado: typecheck y lint de `@academy/mobile`; en `Tablet_Academy_8_7` (horizontal): campo enfocado, error, y entrada con `student.refuerzo@demo.test` → Inicio de reforzamiento.
+- No verificado: diseño centrado < 768 dp y teclado abierto en tablet física.

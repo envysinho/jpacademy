@@ -1,4 +1,4 @@
-import { ArrowLeft, PlayCircle, Sparkles, type LucideIcon } from 'lucide-react-native';
+import { ArrowLeft, FolderOpen, PenLine, PlayCircle, type LucideIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
@@ -8,52 +8,51 @@ import { ProgressBar } from '@/components/ProgressBar';
 import { Raised3D } from '@/components/Raised3D';
 import { brand, colors, fontFamily, radius, spacing } from '@/theme';
 
-import { ChatPanel, type ChatTab } from '../components/course-detail/ChatPanel';
 import { LessonPanel } from '../components/course-detail/LessonPanel';
 import { RoadmapCard } from '../components/course-detail/RoadmapCard';
-import { TaskSideCard, TeacherHelpCard } from '../components/course-detail/SidePanels';
+import {
+  MaterialsCard,
+  TaskActionButton,
+  TaskSideCard,
+} from '../components/course-detail/SidePanels';
 import { CourseBanner } from '../components/courses/CourseBanner';
 import { courseColors } from '../components/courses/courseVisuals';
+import { useStudentSession } from '../data/StudentSession';
 import { courseDetailMock } from '../mocks/courseDetail';
 import type { StudentCourse } from '../mocks/studentCourses';
+import { findTask } from '../mocks/studentTasks';
 
-type Mode = 'lesson' | 'ai';
+type Mode = 'lesson' | 'resources';
 
 const MODES: { icon: LucideIcon; key: Mode; label: string }[] = [
   { icon: PlayCircle, key: 'lesson', label: 'Lección' },
-  { icon: Sparkles, key: 'ai', label: 'Asistente IA' },
+  { icon: FolderOpen, key: 'resources', label: 'Recursos' },
 ];
 
 /** Por debajo de este ancho de contenido, las dos columnas se apilan. */
 const NARROW_WIDTH = 760;
 
 /**
- * Detalle de un curso: cabecera con avance, modo «Lección» (video, material y roadmap) y modo
- * «Asistente IA» (chat con IA, tarea y paso al docente). Solo visual, con datos de muestra.
+ * Interior de un curso. Izquierda (estable): reproductor y resumen de la lección activa.
+ * Derecha: «Lección» (temario con avance secuencial) o «Recursos» (material de estudio y la
+ * tarea de la lección, con «Resolver tarea» hacia el espacio compartido). Sin chat en esta vista.
  */
-export function CourseDetail({ course, onBack }: { course: StudentCourse; onBack: () => void }) {
-  const {
-    aiMessages,
-    currentLesson,
-    exercises,
-    note,
-    resources,
-    task,
-    teacher,
-    teacherMessages,
-    units,
-  } = courseDetailMock;
+export function CourseDetail({
+  course,
+  onBack,
+  onResolveTask,
+}: {
+  course: StudentCourse;
+  onBack: () => void;
+  onResolveTask: (taskId: string) => void;
+}) {
+  const { currentLesson, lessonTaskId, materials, summary, units } = courseDetailMock;
+  const { getThread } = useStudentSession();
   const [mode, setMode] = useState<Mode>('lesson');
-  const [chatTab, setChatTab] = useState<ChatTab>('ai');
-  const [helpRequested, setHelpRequested] = useState(false);
   const [contentWidth, setContentWidth] = useState(0);
   const isNarrow = contentWidth > 0 && contentWidth < NARROW_WIDTH;
-
-  const requestHelp = () => {
-    setHelpRequested(true);
-    setChatTab('teacher');
-    setMode('ai');
-  };
+  const task = findTask(lessonTaskId);
+  const thread = task ? getThread(task.id) : undefined;
 
   return (
     <ScrollView
@@ -84,12 +83,12 @@ export function CourseDetail({ course, onBack }: { course: StudentCourse; onBack
           />
           <View style={styles.flex}>
             <Text style={[styles.eyebrow, { color: courseColors[course.color].ink }]}>
-              {course.subject}
+              {course.area}
             </Text>
             <Text numberOfLines={1} style={styles.title}>
               {course.title}
             </Text>
-            <Text style={styles.subtitle}>
+            <Text numberOfLines={1} style={styles.subtitle}>
               {currentLesson.unit} · {currentLesson.lesson}: {currentLesson.title}
             </Text>
           </View>
@@ -103,7 +102,7 @@ export function CourseDetail({ course, onBack }: { course: StudentCourse; onBack
             </View>
             <ProgressBar trackColor={colors.track} value={course.progress} />
           </Card>
-          <View style={styles.modes}>
+          <View accessibilityRole="tablist" style={styles.modes}>
             {MODES.map(({ icon: Icon, key, label }) => {
               const isActive = key === mode;
               const content = (
@@ -142,60 +141,42 @@ export function CourseDetail({ course, onBack }: { course: StudentCourse; onBack
         </View>
       </FadeIn>
 
-      {/* Cuerpo */}
+      {/* Cuerpo: la columna izquierda no cambia al alternar las pestañas. */}
       <View style={[styles.row, isNarrow && styles.stacked]}>
-        {mode === 'lesson' ? (
-          <>
-            <FadeIn
-              key="lesson-main"
-              delay={80}
-              style={[styles.main, isNarrow && styles.fullWidth]}
-            >
-              <LessonPanel
-                color={course.color}
-                duration={currentLesson.duration}
-                exercises={exercises}
-                icon={course.icon}
-                note={note}
-                resources={resources}
-              />
-            </FadeIn>
-            <FadeIn
-              key="lesson-side"
-              delay={160}
-              style={[styles.side, isNarrow && styles.fullWidth]}
-            >
+        <FadeIn delay={80} style={[styles.main, isNarrow && styles.fullWidth]}>
+          <LessonPanel
+            color={course.color}
+            duration={currentLesson.duration}
+            icon={course.icon}
+            summary={summary}
+          />
+        </FadeIn>
+        <View style={[styles.side, isNarrow && styles.fullWidth]}>
+          {mode === 'lesson' ? (
+            <FadeIn key="lesson-side" delay={120}>
               <RoadmapCard units={units} />
             </FadeIn>
-          </>
-        ) : (
-          <>
-            <FadeIn key="ai-main" delay={80} style={[styles.main, isNarrow && styles.fullWidth]}>
-              <ChatPanel
-                aiMessages={aiMessages}
-                helpRequested={helpRequested}
-                onRequestHelp={() => (helpRequested ? setChatTab('teacher') : requestHelp())}
-                onTabChange={setChatTab}
-                tab={chatTab}
-                teacher={teacher}
-                teacherMessages={teacherMessages}
-              />
+          ) : (
+            <FadeIn key="resources-side" delay={120} style={styles.column}>
+              <MaterialsCard materials={materials} />
+              {task && thread && (
+                <TaskSideCard
+                  action={
+                    <TaskActionButton
+                      hint="Abre el espacio de resolución. No envía la tarea ni consume intentos."
+                      icon={PenLine}
+                      label="Resolver tarea"
+                      onPress={() => onResolveTask(task.id)}
+                    />
+                  }
+                  attemptsUsed={thread.attemptsUsed}
+                  submittedInSession={thread.submittedInSession}
+                  task={task}
+                />
+              )}
             </FadeIn>
-            <FadeIn
-              key="ai-side"
-              delay={160}
-              style={[styles.side, styles.column, isNarrow && styles.fullWidth]}
-            >
-              <TaskSideCard {...task} />
-              <TeacherHelpCard
-                onOpenChat={() => setChatTab('teacher')}
-                onRequest={requestHelp}
-                requested={helpRequested}
-                teacher={teacher}
-              />
-            </FadeIn>
-          </>
-        )}
+          )}
+        </View>
       </View>
     </ScrollView>
   );
@@ -204,8 +185,8 @@ export function CourseDetail({ course, onBack }: { course: StudentCourse; onBack
 const styles = StyleSheet.create({
   scroll: { gap: spacing.md, padding: spacing.lg },
   flex: { flex: 1 },
-  row: { flexDirection: 'row', gap: spacing.md },
-  stacked: { flexDirection: 'column' },
+  row: { alignItems: 'flex-start', flexDirection: 'row', gap: spacing.md },
+  stacked: { alignItems: 'stretch', flexDirection: 'column' },
   column: { gap: spacing.md },
   main: { flex: 1.6, minWidth: 0 },
   side: { flex: 1, minWidth: 0 },

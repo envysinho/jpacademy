@@ -6,29 +6,38 @@ import { ProgressRing } from '@/components/ProgressRing';
 import { Raised3D } from '@/components/Raised3D';
 import { brand, colors, fontFamily, radius, shadows, spacing } from '@/theme';
 
+import type { CourseIcon } from '../../mocks/studentCourses';
 import { CourseObject } from '../courses/CourseIllustration';
 
 /** π 3D en "arcilla" blanca con canto lavanda, para que destaque sobre el azul. */
 const WHITE_CLAY = { base: colors.surface, ink: brand.blueSoft, soft: brand.blueSoft };
 
-/** Tarjeta destacada "Continúa aprendiendo" (bloque azul único de la vista). */
+/**
+ * Tarjeta destacada "Continúa aprendiendo" (bloque azul único de la vista). Muestra el último
+ * curso activo del alumno; sin actividad, invita a empezar sin inventar un curso.
+ */
 export function ResumeCard({
-  eyebrow,
-  modules,
-  remaining,
-  remainingProgress,
-  subject,
-  topic,
+  activity,
   isCompact,
+  onPress,
 }: {
-  eyebrow: string;
-  modules: { done: number; total: number };
-  remaining: string;
-  remainingProgress: number;
-  subject: string;
-  topic: string;
+  /** `null` = aún no hay actividad. */
+  activity: {
+    icon: CourseIcon;
+    lessonLabel: string;
+    lessonTitle: string;
+    modules: { done: number; total: number };
+    remaining?: { label: string; progress: number };
+    title: string;
+  } | null;
   isCompact: boolean;
+  onPress: () => void;
 }) {
+  const title = activity?.title ?? 'Empieza tu primer curso';
+  const topic = activity
+    ? `${activity.lessonLabel} · ${activity.lessonTitle}`
+    : 'Elige un curso en el catálogo y da el primer paso.';
+
   return (
     <LinearGradient
       colors={[brand.blue, brand.blueDeep, brand.blueNight]}
@@ -40,7 +49,7 @@ export function ResumeCard({
       {/* Luz suave y objeto 3D de la materia a la derecha (sustituye a la foto de la referencia). */}
       <View pointerEvents="none" style={styles.glow} />
       <View pointerEvents="none" style={[styles.object, isCompact && styles.objectCompact]}>
-        <CourseObject icon="sigma" palette={WHITE_CLAY} uid="resume-hero" />
+        <CourseObject icon={activity?.icon ?? 'book'} palette={WHITE_CLAY} uid="resume-hero" />
       </View>
       <Text pointerEvents="none" style={styles.symbol}>
         ∑
@@ -49,50 +58,63 @@ export function ResumeCard({
       <View style={styles.top}>
         <View style={styles.eyebrow}>
           <Hourglass color={brand.onBlueMuted} size={14} strokeWidth={2} />
-          <Text style={styles.eyebrowText}>{eyebrow}</Text>
+          <Text style={styles.eyebrowText}>
+            {activity ? 'Continúa aprendiendo' : 'Tu aprendizaje'}
+          </Text>
         </View>
-        <Text numberOfLines={1} style={styles.title}>
-          {subject}
+        <Text
+          adjustsFontSizeToFit
+          minimumFontScale={0.7}
+          numberOfLines={1}
+          style={[styles.title, isCompact && styles.titleCompact]}
+        >
+          {title}
         </Text>
-        <Text numberOfLines={1} style={styles.topic}>
+        <Text numberOfLines={2} style={[styles.topic, isCompact && styles.topicCompact]}>
           {topic}
         </Text>
       </View>
 
       <View style={styles.bottom}>
-        <View style={styles.chips}>
-          <View style={styles.chip}>
-            <View style={styles.chipIcon}>
-              <ProgressRing
-                color={brand.accent}
-                size={22}
-                strokeWidth={4}
-                trackColor={colors.track}
-                value={remainingProgress}
-              />
-            </View>
-            <View>
-              <Text style={styles.chipLabel}>Restante</Text>
-              <Text style={styles.chipValue}>{remaining}</Text>
+        {activity ? (
+          <View style={styles.chips}>
+            {activity.remaining && (
+              <View style={styles.chip}>
+                <View style={styles.chipIcon}>
+                  <ProgressRing
+                    color={brand.accent}
+                    size={22}
+                    strokeWidth={4}
+                    trackColor={colors.track}
+                    value={activity.remaining.progress}
+                  />
+                </View>
+                <View>
+                  <Text style={styles.chipLabel}>Restante</Text>
+                  <Text style={styles.chipValue}>{activity.remaining.label}</Text>
+                </View>
+              </View>
+            )}
+            <View style={styles.chip}>
+              <View style={styles.chipIcon}>
+                <GraduationCap color={brand.accentPressed} size={18} strokeWidth={2.2} />
+              </View>
+              <View>
+                <Text style={styles.chipLabel}>Módulos</Text>
+                <Text style={styles.chipValue}>
+                  {activity.modules.done} de {activity.modules.total}
+                </Text>
+              </View>
             </View>
           </View>
-          <View style={styles.chip}>
-            <View style={styles.chipIcon}>
-              <GraduationCap color={brand.accentPressed} size={18} strokeWidth={2.2} />
-            </View>
-            <View>
-              <Text style={styles.chipLabel}>Módulos</Text>
-              <Text style={styles.chipValue}>
-                {modules.done} de {modules.total}
-              </Text>
-            </View>
-          </View>
-        </View>
+        ) : (
+          <View />
+        )}
 
         <Pressable
-          accessibilityLabel={`Continuar ${subject}`}
+          accessibilityLabel={activity ? `Continuar ${title}` : 'Ver catálogo de cursos'}
           accessibilityRole="button"
-          onPress={() => undefined}
+          onPress={onPress}
         >
           {({ pressed }) => (
             <Raised3D depth={5} faceStyle={styles.play} pressed={pressed} variant="white">
@@ -110,7 +132,6 @@ const styles = StyleSheet.create({
     borderRadius: radius.card,
     flex: 1,
     justifyContent: 'space-between',
-    minHeight: 290,
     overflow: 'hidden',
     padding: spacing.lg,
     ...shadows.card,
@@ -145,7 +166,9 @@ const styles = StyleSheet.create({
     letterSpacing: -1,
     lineHeight: 52,
   },
-  topic: { color: brand.onBlueMuted, fontFamily: fontFamily.medium, fontSize: 15 },
+  titleCompact: { fontSize: 38, lineHeight: 46 },
+  topic: { color: brand.onBlueMuted, fontFamily: fontFamily.medium, fontSize: 15, maxWidth: '62%' },
+  topicCompact: { maxWidth: '58%' },
   bottom: { alignItems: 'flex-end', flexDirection: 'row', justifyContent: 'space-between' },
   chips: {
     backgroundColor: brand.onBlueSubtle,

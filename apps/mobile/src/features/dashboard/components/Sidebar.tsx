@@ -1,17 +1,31 @@
 import { LinearGradient } from 'expo-linear-gradient';
-import { UserRound } from 'lucide-react-native';
+import { LogOut, UserRound, X } from 'lucide-react-native';
 import { useState } from 'react';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { brand, fontFamily, spacing } from '@/theme';
+import { Clay3DIcon } from '@/components/Clay3DIcon';
+import { Raised3D } from '@/components/Raised3D';
+import { brand, categories, colors, fontFamily, radius, spacing } from '@/theme';
 import { logos } from '@/theme/logos';
 
-import { roleLabels, roleNavigation, type DashboardRole } from '../config/roleNavigation';
+import {
+  roleLabels,
+  roleNavigation,
+  type DashboardRole,
+  type SidebarNavigationItem,
+} from '../config/roleNavigation';
 
 export const SIDEBAR_WIDTH = 240;
 export const COLLAPSED_SIDEBAR_WIDTH = 72;
 
 const ITEM_SIZE = 48;
+const CLAY_SIZE = 34;
+
+/**
+ * Iconos 3D del alumno: inactivos con su color de `categories` (config por ítem); el activo pasa
+ * a la paleta de marca sobre la píldora blanca.
+ */
+const CLAY_ACTIVE = { base: brand.blue, ink: brand.blueDeep, soft: brand.blueSoft };
 
 /** Símbolos decorativos que recuerdan al fondo matemático del login. */
 const DECORATIVE_SYMBOLS = [
@@ -22,15 +36,21 @@ const DECORATIVE_SYMBOLS = [
 /** Barra lateral reutilizable por rol, con la estética del login (azul de marca + acento naranja). */
 export function Sidebar({
   activeKey,
+  items,
   onSelect,
+  onSignOut,
   role,
 }: {
   activeKey: string;
+  /** Navegación propia (p. ej. acompañamiento escolar); por defecto, la del rol. */
+  items?: SidebarNavigationItem[];
   onSelect: (key: string) => void;
+  onSignOut?: () => void;
   role: DashboardRole;
 }) {
   const [isCollapsed, setIsCollapsed] = useState(true);
-  const navigationItems = roleNavigation[role];
+  const [profileOpen, setProfileOpen] = useState(false);
+  const navigationItems = items ?? roleNavigation[role];
   const roleLabel = roleLabels[role];
 
   return (
@@ -77,7 +97,7 @@ export function Sidebar({
         </View>
 
         <View style={styles.navigation}>
-          {navigationItems.map(({ icon: Icon, key, label }) => {
+          {navigationItems.map(({ clay, icon: Icon, key, label }) => {
             const isActive = key === activeKey;
 
             return (
@@ -96,11 +116,20 @@ export function Sidebar({
                 ]}
               >
                 <View style={styles.navigationIcon}>
-                  <Icon
-                    color={isActive ? brand.accent : brand.onBlueMuted}
-                    size={22}
-                    strokeWidth={isActive ? 2.4 : 2}
-                  />
+                  {clay ? (
+                    <Clay3DIcon
+                      kind={clay.kind}
+                      palette={isActive ? CLAY_ACTIVE : categories[clay.color]}
+                      shadow={false}
+                      size={CLAY_SIZE}
+                    />
+                  ) : (
+                    <Icon
+                      color={isActive ? brand.accent : brand.onBlueMuted}
+                      size={22}
+                      strokeWidth={isActive ? 2.4 : 2}
+                    />
+                  )}
                 </View>
                 {!isCollapsed && (
                   <Text
@@ -122,7 +151,7 @@ export function Sidebar({
           accessibilityLabel="Abrir perfil"
           accessibilityRole="button"
           hitSlop={4}
-          onPress={() => undefined}
+          onPress={() => setProfileOpen(true)}
           style={({ pressed }) => [
             styles.profileButton,
             !isCollapsed && styles.profileButtonExpanded,
@@ -144,6 +173,56 @@ export function Sidebar({
           )}
         </Pressable>
       </View>
+
+      {/* Perfil (provisional): avatar 3D que luego será la foto del alumno y cerrar sesión. */}
+      <Modal
+        animationType="fade"
+        onRequestClose={() => setProfileOpen(false)}
+        transparent
+        visible={profileOpen}
+      >
+        <View style={styles.modalBackdrop}>
+          <View pointerEvents="none" style={styles.modalScrim} />
+          <Pressable
+            accessibilityLabel="Cerrar perfil"
+            accessibilityRole="button"
+            onPress={() => setProfileOpen(false)}
+            style={StyleSheet.absoluteFill}
+          />
+          <View style={styles.profileSheet}>
+            <Pressable
+              accessibilityLabel="Cerrar"
+              accessibilityRole="button"
+              onPress={() => setProfileOpen(false)}
+              style={styles.sheetClose}
+            >
+              <X color={colors.text} size={20} strokeWidth={2.4} />
+            </Pressable>
+            <View style={styles.avatarHalo}>
+              <Clay3DIcon kind="student" palette={CLAY_ACTIVE} size={104} />
+            </View>
+            <Text style={styles.sheetTitle}>{roleLabel}</Text>
+            <Text style={styles.sheetHint}>Pronto verás aquí tu foto y tus datos de perfil.</Text>
+            {onSignOut && (
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => {
+                  setProfileOpen(false);
+                  onSignOut();
+                }}
+                style={styles.sheetAction}
+              >
+                {({ pressed }) => (
+                  <Raised3D faceStyle={styles.signOut} pressed={pressed} variant="white">
+                    <LogOut color={categories.red.ink} size={18} strokeWidth={2.2} />
+                    <Text style={styles.signOutText}>Cerrar sesión</Text>
+                  </Raised3D>
+                )}
+              </Pressable>
+            )}
+          </View>
+        </View>
+      </Modal>
     </LinearGradient>
   );
 }
@@ -257,6 +336,59 @@ const styles = StyleSheet.create({
     width: ITEM_SIZE,
   },
   profileText: { flex: 1, marginLeft: spacing.sm },
+  modalBackdrop: { alignItems: 'center', flex: 1, justifyContent: 'center', padding: spacing.lg },
+  modalScrim: {
+    backgroundColor: brand.blueNight,
+    bottom: 0,
+    left: 0,
+    opacity: 0.4,
+    position: 'absolute',
+    right: 0,
+    top: 0,
+  },
+  profileSheet: {
+    alignItems: 'center',
+    backgroundColor: colors.surface,
+    borderRadius: radius.card,
+    gap: spacing.sm,
+    maxWidth: 360,
+    padding: spacing.lg,
+    width: '100%',
+  },
+  sheetClose: {
+    alignItems: 'center',
+    height: 48,
+    justifyContent: 'center',
+    position: 'absolute',
+    right: 8,
+    top: 8,
+    width: 48,
+  },
+  avatarHalo: {
+    alignItems: 'center',
+    backgroundColor: brand.blueSoft,
+    borderRadius: radius.pill,
+    height: 136,
+    justifyContent: 'center',
+    marginTop: spacing.sm,
+    width: 136,
+  },
+  sheetTitle: { color: colors.text, fontFamily: fontFamily.bold, fontSize: 20 },
+  sheetHint: {
+    color: colors.textMuted,
+    fontFamily: fontFamily.regular,
+    fontSize: 13,
+    textAlign: 'center',
+  },
+  sheetAction: { alignSelf: 'stretch', marginTop: spacing.sm },
+  signOut: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: spacing.sm,
+    height: 48,
+    justifyContent: 'center',
+  },
+  signOutText: { color: categories.red.ink, fontFamily: fontFamily.bold, fontSize: 15 },
   profileLabel: { color: brand.onBlue, fontFamily: fontFamily.semibold, fontSize: 15 },
   profileHint: { color: brand.onBlueMuted, fontFamily: fontFamily.regular, fontSize: 12 },
 });

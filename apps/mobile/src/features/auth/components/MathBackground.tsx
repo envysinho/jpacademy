@@ -28,8 +28,9 @@ import { fontFamily } from '@/theme';
  * Capas (de atrás hacia delante):
  *   1. Degradado base (SVG estático).
  *   2. Resplandores que "respiran" (Animated.View).
- *   3. Cuadrícula, ejes, parábola y geometría (SVG estático).
- *   4. Curva seno que se desplaza, pulso en el vértice y símbolos flotantes (Animated.View).
+ *   3. Cuadrícula y geometría (SVG estático). Sin ejes ni curvas: no compiten con el logo
+ *      ni con los objetos 3D del login.
+ *   4. Símbolos flotantes (Animated.View).
  *
  * Todas las animaciones usan `Animated` con `useNativeDriver: true` (solo transform/opacity),
  * así corren en el hilo nativo sin trabajo de JS por fotograma y sin reanimated (D-04).
@@ -40,46 +41,10 @@ const VIEW_W = 1200;
 const VIEW_H = 700;
 const GRID = 30;
 
-// Origen del plano cartesiano decorativo.
-const ORIGIN_X = 120;
-const ORIGIN_Y = 470;
-
-// Curva seno: y = A·sen((x − origen) / k). Un periodo mide 2πk unidades.
-const SINE_AMPLITUDE = 70;
-const SINE_K = 58;
-const SINE_PERIOD = 2 * Math.PI * SINE_K;
-const SINE_END = 760;
-const SINE_BAND = SINE_AMPLITUDE * 2 + 20;
-/** Tiempo en recorrer un periodo completo. */
-const SINE_LOOP_MS = 9000;
-
-const VERTEX = { x: 470, y: ORIGIN_Y - 330 };
-
 const minorLines = {
   vertical: Array.from({ length: Math.ceil(VIEW_W / GRID) + 1 }, (_, i) => i * GRID),
   horizontal: Array.from({ length: Math.ceil(VIEW_H / GRID) + 1 }, (_, i) => i * GRID),
 };
-
-function buildPath(fn: (x: number) => number, from: number, to: number, step = 6) {
-  let d = '';
-  for (let x = from; x <= to; x += step) {
-    d += `${x === from ? 'M' : 'L'}${x.toFixed(1)},${fn(x).toFixed(1)} `;
-  }
-  return d.trim();
-}
-
-// La curva se dibuja un periodo extra a la izquierda para que el bucle sea continuo.
-const sinePath = buildPath(
-  (x) => ORIGIN_Y - SINE_AMPLITUDE * Math.sin((x - ORIGIN_X) / SINE_K),
-  ORIGIN_X - SINE_PERIOD,
-  SINE_END,
-  4,
-);
-const parabolaPath = buildPath(
-  (x) => VERTEX.y + ((x - VERTEX.x) * (x - VERTEX.x)) / 260,
-  210,
-  730,
-);
 
 type MathSymbol = { char: string; x: number; y: number; size: number; opacity: number; rotate?: number };
 
@@ -157,28 +122,6 @@ function usePingPong(duration: number, delay: number, enabled: boolean) {
   return value;
 }
 
-/** Valor 0 → 1 lineal que se reinicia (desplazamientos continuos y pulsos). */
-function useLoop(duration: number, enabled: boolean, easing = Easing.linear, pause = 0) {
-  const [value] = useState(() => new Animated.Value(0));
-
-  useEffect(() => {
-    if (!enabled) {
-      value.setValue(0);
-      return;
-    }
-    const animation = Animated.loop(
-      Animated.sequence([
-        Animated.timing(value, { duration, easing, toValue: 1, useNativeDriver: true }),
-        Animated.delay(pause),
-      ]),
-    );
-    animation.start();
-    return () => animation.stop();
-  }, [duration, easing, enabled, pause, value]);
-
-  return value;
-}
-
 function Glow({ glow, frame, animate }: { glow: (typeof glows)[number]; frame: Frame; animate: boolean }) {
   const progress = usePingPong(glow.duration, 0, animate);
   const size = glow.r * 2 * frame.scale;
@@ -210,87 +153,6 @@ function Glow({ glow, frame, animate }: { glow: (typeof glows)[number]; frame: F
         <Circle cx={glow.r} cy={glow.r} fill={`url(#${glow.id})`} r={glow.r} />
       </Svg>
     </Animated.View>
-  );
-}
-
-function MovingSine({ frame, animate }: { frame: Frame; animate: boolean }) {
-  const progress = useLoop(SINE_LOOP_MS, animate);
-  const { scale, offsetX, offsetY } = frame;
-  const top = ORIGIN_Y - SINE_BAND / 2;
-  const innerWidth = SINE_END - ORIGIN_X + SINE_PERIOD;
-
-  return (
-    // Ventana recortada desde el eje y hasta el final de la curva.
-    <View
-      style={[
-        styles.absolute,
-        styles.clip,
-        {
-          height: SINE_BAND * scale,
-          left: offsetX + ORIGIN_X * scale,
-          top: offsetY + top * scale,
-          width: (SINE_END - ORIGIN_X) * scale,
-        },
-      ]}
-    >
-      <Animated.View
-        style={{
-          height: SINE_BAND * scale,
-          marginLeft: -SINE_PERIOD * scale,
-          transform: [
-            {
-              translateX: progress.interpolate({
-                inputRange: [0, 1],
-                outputRange: [0, SINE_PERIOD * scale],
-              }),
-            },
-          ],
-          width: innerWidth * scale,
-        }}
-      >
-        <Svg
-          height="100%"
-          viewBox={`${ORIGIN_X - SINE_PERIOD} ${top} ${innerWidth} ${SINE_BAND}`}
-          width="100%"
-        >
-          <Path
-            d={sinePath}
-            fill="none"
-            stroke="#7DD3FC"
-            strokeLinecap="round"
-            strokeOpacity={0.75}
-            strokeWidth={3}
-          />
-        </Svg>
-      </Animated.View>
-    </View>
-  );
-}
-
-const PULSE_SIZE = 14;
-
-function VertexPulse({ frame, animate }: { frame: Frame; animate: boolean }) {
-  const progress = useLoop(2200, animate, Easing.out(Easing.quad), 900);
-  const size = PULSE_SIZE * frame.scale;
-
-  if (!animate) return null;
-
-  return (
-    <Animated.View
-      style={[
-        styles.absolute,
-        styles.pulse,
-        {
-          borderRadius: size / 2,
-          height: size,
-          left: frame.offsetX + VERTEX.x * frame.scale - size / 2,
-          opacity: progress.interpolate({ inputRange: [0, 1], outputRange: [0.8, 0] }),
-          top: frame.offsetY + VERTEX.y * frame.scale - size / 2,
-          transform: [{ scale: progress.interpolate({ inputRange: [0, 1], outputRange: [1, 3.4] }) }],
-          width: size,
-        },
-      ]}
-    />
   );
 }
 
@@ -409,34 +271,6 @@ function MathBackgroundComponent() {
           ))}
         </G>
 
-        {/* Ejes cartesianos */}
-        <G stroke="#FFFFFF" strokeLinecap="round" strokeOpacity={0.35} strokeWidth={2}>
-          <Line x1={ORIGIN_X - 40} x2={780} y1={ORIGIN_Y} y2={ORIGIN_Y} />
-          <Line x1={ORIGIN_X} x2={ORIGIN_X} y1={ORIGIN_Y + 60} y2={90} />
-          <Path d={`M772,${ORIGIN_Y - 7} L782,${ORIGIN_Y} L772,${ORIGIN_Y + 7}`} fill="none" />
-          <Path d={`M${ORIGIN_X - 7},98 L${ORIGIN_X},88 L${ORIGIN_X + 7},98`} fill="none" />
-        </G>
-        <G fill="#FFFFFF" fillOpacity={0.45} fontFamily={fontFamily.medium} fontSize={18}>
-          <SvgText x={790} y={ORIGIN_Y + 6}>
-            x
-          </SvgText>
-          <SvgText x={ORIGIN_X - 5} y={78}>
-            y
-          </SvgText>
-        </G>
-
-        {/* Parábola */}
-        <Path
-          d={parabolaPath}
-          fill="none"
-          stroke="#FCD34D"
-          strokeDasharray="10 8"
-          strokeLinecap="round"
-          strokeOpacity={0.6}
-          strokeWidth={2.5}
-        />
-        <Circle cx={VERTEX.x} cy={VERTEX.y} fill="#FCD34D" fillOpacity={0.85} r={5} />
-
         {/* Círculo con radio */}
         <G fill="none" stroke="#FFFFFF" strokeOpacity={0.22} strokeWidth={1.6}>
           <Circle cx={930} cy={130} r={95} />
@@ -481,8 +315,6 @@ function MathBackgroundComponent() {
       {/* 4. Elementos animados */}
       {frame ? (
         <>
-          <MovingSine animate={animate} frame={frame} />
-          <VertexPulse animate={animate} frame={frame} />
           {symbols.map((symbol, index) => (
             <FloatingSymbol
               animate={animate}
@@ -500,8 +332,6 @@ function MathBackgroundComponent() {
 
 const styles = StyleSheet.create({
   absolute: { position: 'absolute' },
-  clip: { overflow: 'hidden' },
-  pulse: { borderColor: '#FCD34D', borderWidth: 2 },
   symbol: { color: '#FFFFFF', fontFamily: fontFamily.bold, includeFontPadding: false },
 });
 

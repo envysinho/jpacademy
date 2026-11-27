@@ -13,7 +13,7 @@ import { courseAction, courseColors } from './courseVisuals';
 
 /** Fila de curso para la vista de lista. */
 export function CourseListRow({ course, onOpen }: { course: StudentCourse; onOpen?: () => void }) {
-  const { bookmarked, color, hours, icon, id, lessons, progress, subject, title } = course;
+  const { area, bookmarked, color, hours, icon, id, lessons, progress, title } = course;
   const action = courseAction(progress);
   const ActionIcon = progress >= 100 ? RotateCcw : Play;
 
@@ -22,7 +22,7 @@ export function CourseListRow({ course, onOpen }: { course: StudentCourse; onOpe
       <CourseBanner compact color={color} icon={icon} style={styles.banner} uid={`list-${id}`} />
 
       <View style={styles.info}>
-        <Text style={[styles.subject, { color: courseColors[color].ink }]}>{subject}</Text>
+        <Text style={[styles.subject, { color: courseColors[color].ink }]}>{area}</Text>
         <Text numberOfLines={1} style={styles.title}>
           {title}
         </Text>

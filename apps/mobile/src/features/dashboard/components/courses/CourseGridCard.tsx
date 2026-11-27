@@ -13,7 +13,7 @@ import { courseAction, courseColors } from './courseVisuals';
 
 /** Tarjeta de curso en cuadrícula: ilustración de la materia, avance y acción principal. */
 export function CourseGridCard({ course, onOpen }: { course: StudentCourse; onOpen?: () => void }) {
-  const { bookmarked, color, hours, icon, id, lessons, progress, subject, title } = course;
+  const { area, bookmarked, color, hours, icon, id, lessons, progress, title } = course;
   const action = courseAction(progress);
   const ActionIcon = progress >= 100 ? RotateCcw : Play;
 
@@ -22,7 +22,7 @@ export function CourseGridCard({ course, onOpen }: { course: StudentCourse; onOp
       <View>
         <CourseBanner color={color} icon={icon} style={styles.banner} uid={`grid-${id}`} />
         <View style={styles.subjectPill}>
-          <Text style={[styles.subjectText, { color: courseColors[color].ink }]}>{subject}</Text>
+          <Text style={[styles.subjectText, { color: courseColors[color].ink }]}>{area}</Text>
         </View>
         <Pressable
           accessibilityLabel={bookmarked ? 'Quitar de favoritos' : 'Añadir a favoritos'}

@@ -11,6 +11,8 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 
+import { AuthSessionProvider } from '@/features/auth/AuthSession';
+
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
@@ -33,9 +35,9 @@ export default function RootLayout() {
   }
 
   return (
-    <>
+    <AuthSessionProvider>
       <StatusBar style="light" />
       <Stack screenOptions={{ headerShown: false }} />
-    </>
+    </AuthSessionProvider>
   );
 }

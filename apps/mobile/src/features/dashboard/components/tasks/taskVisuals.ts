@@ -11,13 +11,28 @@ import {
 
 import { categories, colors } from '@/theme';
 
-import type { AttachmentKind, StudentTask, TaskGroup } from '../../mocks/studentTasks';
+import type { AttachmentKind, StudentTask } from '../../mocks/studentTasks';
 
-export const groupLabels: Record<TaskGroup, string> = {
-  today: 'Hoy',
-  week: 'Esta semana',
-  later: 'Más adelante',
-};
+const MONTHS = [
+  'ene.',
+  'feb.',
+  'mar.',
+  'abr.',
+  'may.',
+  'jun.',
+  'jul.',
+  'ago.',
+  'sep.',
+  'oct.',
+  'nov.',
+  'dic.',
+];
+
+/** «2025-09-12» → «12 sep.» (fecha de calendario, sin conversión de zona horaria). */
+export function formatShortDate(isoDate: string) {
+  const [, month, day] = isoDate.split('-').map(Number);
+  return `${day} ${MONTHS[month - 1]}`;
+}
 
 export const attachmentIcons: Record<AttachmentKind, LucideIcon> = {
   doc: FileIcon,
@@ -48,7 +63,7 @@ export function taskChip(task: StudentTask): {
         background: categories.green.soft,
         color: categories.green.ink,
         icon: CircleCheck,
-        label: 'Entregada',
+        label: 'Por calificar',
       };
     case 'graded':
       return {
@@ -66,5 +81,31 @@ export function taskChip(task: StudentTask): {
             label: task.dueLabel,
           }
         : { background: colors.track, color: colors.text, icon: Clock, label: task.dueLabel };
+  }
+}
+
+/** Píldora de estado de una tarea (tarjeta «Tu tarea» y cabecera del espacio de resolución). */
+export function taskStatusPill(
+  task: StudentTask,
+  submittedInSession = false,
+): { background: string; color: string; label: string } {
+  if (submittedInSession || task.status === 'submitted') {
+    return { background: categories.green.soft, color: categories.green.ink, label: 'En revisión' };
+  }
+  switch (task.status) {
+    case 'graded':
+      return {
+        background: categories.green.soft,
+        color: categories.green.ink,
+        label: `Calificada · ${task.grade}/${task.points}`,
+      };
+    case 'overdue':
+      return { background: categories.red.soft, color: categories.red.ink, label: 'Vencida' };
+    default:
+      return {
+        background: categories.orange.soft,
+        color: categories.orange.ink,
+        label: 'Pendiente',
+      };
   }
 }

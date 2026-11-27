@@ -1,195 +1,205 @@
-import { SlidersHorizontal } from 'lucide-react-native';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 
+import type { Clay3DKind, ClayPalette } from '@/components/Clay3DIcon';
 import { FadeIn } from '@/components/FadeIn';
-import { Raised3D } from '@/components/Raised3D';
 import { SceneStatTile } from '@/components/SceneStatTile';
-import { brand, categories, colors, fontFamily, radius, spacing } from '@/theme';
+import { brand, categories, spacing } from '@/theme';
 
 import { TaskDetail } from '../components/tasks/TaskDetail';
-import { TaskList } from '../components/tasks/TaskList';
-import { studentTasksMock, type StudentTask, type TaskStatus } from '../mocks/studentTasks';
+import { TaskList, type TaskListMode } from '../components/tasks/TaskList';
+import { averageGrade, formatGrade } from '../data/studentSelectors';
+import { studentTasksMock, type StudentTask } from '../mocks/studentTasks';
 
-type TabKey = 'pending' | 'submitted' | 'graded' | 'overdue';
-
-const TABS: { key: TabKey; label: string; statuses: TaskStatus[] }[] = [
-  { key: 'pending', label: 'Pendientes', statuses: ['pending'] },
-  { key: 'submitted', label: 'Entregadas', statuses: ['submitted', 'graded'] },
-  { key: 'graded', label: 'Calificadas', statuses: ['graded'] },
-  { key: 'overdue', label: 'Vencidas', statuses: ['overdue'] },
-];
+type ViewKey = 'pending' | 'today' | 'submitted' | 'average';
 
 const BRAND_PALETTE = { base: brand.blue, ink: brand.blueDeep, soft: brand.blueSoft };
 /** Por debajo de este ancho de contenido, la lista y el detalle se apilan. */
 const NARROW_WIDTH = 760;
 const STAGGER = 70;
-/** Canto de los botones 3D de la barra. */
-const RAISE = 3;
 
-function countBy(statuses: TaskStatus[]) {
-  return studentTasksMock.filter((task) => statuses.includes(task.status)).length;
+/** Mismo orden que la lista: de hoy primero, luego esta semana y más adelante. */
+const GROUP_RANK = { later: 3, today: 1, week: 2 } as const;
+const urgency = (task: StudentTask) => (task.group ? GROUP_RANK[task.group] : 4);
+
+/** Fecha de referencia en el historial: entrega o, si venció sin entregar, la fecha límite. */
+const historyDate = (task: StudentTask) => task.submittedAt ?? task.dueDate ?? '';
+const byRecent = (date: (task: StudentTask) => string) => (a: StudentTask, b: StudentTask) =>
+  date(b).localeCompare(date(a));
+const isDelivered = (task: StudentTask) => task.status === 'submitted' || task.status === 'graded';
+
+/** Tareas de cada vista, en el orden en que se muestran. */
+function tasksFor(view: ViewKey): StudentTask[] {
+  switch (view) {
+    case 'today':
+      return studentTasksMock.filter((task) => task.status === 'pending' && task.group === 'today');
+    case 'submitted':
+      // Historial: entregadas y vencidas sin entregar (no se pueden resolver; quedan registradas).
+      return studentTasksMock
+        .filter((task) => isDelivered(task) || task.status === 'overdue')
+        .sort(byRecent(historyDate));
+    case 'average':
+      return studentTasksMock
+        .filter((task) => task.status === 'graded')
+        .sort(byRecent((task) => task.gradedAt ?? ''));
+    default:
+      // Solo las que aún se pueden resolver (las vencidas pasan al historial).
+      return studentTasksMock
+        .filter((task) => task.status === 'pending')
+        .sort((a, b) => urgency(a) - urgency(b));
+  }
 }
 
-/** Tareas del alumno: resúmenes 3D, pestañas por estado, lista agrupada y detalle. Solo visual. */
-export function StudentTasks() {
-  const [tab, setTab] = useState<TabKey>('pending');
+const listMode: Record<ViewKey, TaskListMode> = {
+  average: 'history',
+  pending: 'grouped',
+  submitted: 'history',
+  today: 'plain',
+};
+
+const emptyMessage: Record<ViewKey, string> = {
+  average: 'Aún no tienes tareas calificadas.',
+  pending: '¡Todo al día! No tienes tareas por resolver.',
+  submitted: 'Todavía no has entregado tareas.',
+  today: 'No tienes entregas para hoy.',
+};
+
+/**
+ * Tareas del alumno en **un solo viewport**: las cuatro tarjetas superiores son el selector de
+ * vista (Pendientes por defecto); debajo, lista + detalle con scroll interno. «Resolver tarea» abre el espacio de resolución compartido.
+ */
+export function StudentTasks({
+  onResolveTask,
+}: {
+  onResolveTask: (taskId: string, tab?: 'ai' | 'teacher') => void;
+}) {
+  const [view, setView] = useState<ViewKey>('pending');
   const [selectedId, setSelectedId] = useState<string>();
   const [contentWidth, setContentWidth] = useState(0);
   const isNarrow = contentWidth > 0 && contentWidth < NARROW_WIDTH;
 
-  const activeTab = TABS.find((item) => item.key === tab) ?? TABS[0];
-  const tasks = studentTasksMock.filter((task) => activeTab.statuses.includes(task.status));
-  const selected: StudentTask | undefined =
-    tasks.find((task) => task.id === selectedId) ?? tasks[0];
+  const tasks = tasksFor(view);
+  // Siempre una tarea válida de la vista actual (la primera si la elegida no pertenece a ella).
+  const selected = tasks.find((task) => task.id === selectedId) ?? tasks[0];
+  const average = averageGrade(studentTasksMock);
+  const overdueCount = studentTasksMock.filter((task) => task.status === 'overdue').length;
 
-  const pending = studentTasksMock.filter((task) => task.status === 'pending');
-  const graded = studentTasksMock.filter((task) => task.status === 'graded');
-  const average = graded.length
-    ? Math.round(graded.reduce((sum, task) => sum + (task.grade ?? 0), 0) / graded.length)
-    : 0;
-
-  const stats = [
+  const stats: {
+    caption: string;
+    key: ViewKey;
+    kind: Clay3DKind;
+    label: string;
+    palette: ClayPalette;
+    value: number | string;
+  }[] = [
     {
-      caption: 'Por entregar',
+      caption: 'Por resolver',
+      key: 'pending',
       kind: 'clipboard',
       label: 'Pendientes',
       palette: BRAND_PALETTE,
-      value: pending.length,
+      value: tasksFor('pending').length,
     },
     {
       caption: 'Vencen hoy',
+      key: 'today',
       kind: 'flame',
       label: 'Para hoy',
       palette: categories.red,
-      value: pending.filter((task) => task.group === 'today').length,
+      value: tasksFor('today').length,
     },
     {
-      caption: 'Este bimestre',
+      caption: overdueCount
+        ? `${overdueCount} ${overdueCount === 1 ? 'vencida' : 'vencidas'}`
+        : 'Historial',
+      key: 'submitted',
       kind: 'badge',
       label: 'Entregadas',
       palette: categories.green,
-      value: countBy(['submitted', 'graded']),
+      value: studentTasksMock.filter(isDelivered).length,
     },
     {
       caption: 'Sobre 20',
+      key: 'average',
       kind: 'trophy',
       label: 'Promedio',
       palette: categories.orange,
-      value: average,
+      value: average === undefined ? '—' : formatGrade(average),
     },
-  ] as const;
+  ];
 
-  return (
+  const statsRow = (
+    <View accessibilityRole="tablist" style={[styles.row, isNarrow && styles.wrapRow]}>
+      {stats.map(({ key, ...stat }, index) => (
+        <FadeIn
+          key={key}
+          delay={STAGGER * index}
+          style={[styles.flex, isNarrow && styles.halfWidth]}
+        >
+          <SceneStatTile
+            {...stat}
+            onPress={() => {
+              setView(key);
+              setSelectedId(undefined);
+            }}
+            selected={view === key}
+          />
+        </FadeIn>
+      ))}
+    </View>
+  );
+
+  const listAndDetail = (
+    <View style={[styles.row, !isNarrow && styles.main, isNarrow && styles.stackedRow]}>
+      <FadeIn delay={STAGGER * 4} style={[styles.listColumn, isNarrow && styles.fullWidth]}>
+        <TaskList
+          emptyMessage={emptyMessage[view]}
+          fill={!isNarrow}
+          mode={listMode[view]}
+          onSelect={setSelectedId}
+          selectedId={selected?.id}
+          tasks={tasks}
+        />
+      </FadeIn>
+      {selected && (
+        <FadeIn delay={STAGGER * 5} style={[styles.detailColumn, isNarrow && styles.fullWidth]}>
+          <TaskDetail
+            key={selected.id}
+            fill={!isNarrow}
+            onAskHelp={() => onResolveTask(selected.id, 'teacher')}
+            onResolve={() => onResolveTask(selected.id)}
+            task={selected}
+          />
+        </FadeIn>
+      )}
+    </View>
+  );
+
+  // Un solo viewport: resúmenes arriba y lista + detalle con scroll interno. Apilado si es estrecho.
+  return isNarrow ? (
     <ScrollView
       contentContainerStyle={styles.scroll}
       onLayout={(event) => setContentWidth(event.nativeEvent.layout.width)}
       showsVerticalScrollIndicator={false}
     >
-      {/* Resúmenes */}
-      <View style={[styles.row, isNarrow && styles.wrapRow]}>
-        {stats.map((stat, index) => (
-          <FadeIn
-            key={stat.label}
-            delay={STAGGER * index}
-            style={[styles.flex, isNarrow && styles.halfWidth]}
-          >
-            <SceneStatTile {...stat} />
-          </FadeIn>
-        ))}
-      </View>
-
-      {/* Pestañas por estado + filtros */}
-      <FadeIn delay={STAGGER * 4} style={styles.toolbar}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tabsScroll}>
-          <View accessibilityRole="tablist" style={styles.tabs}>
-            {TABS.map(({ key, label, statuses }) => {
-              const isActive = key === tab;
-              const content = (
-                <>
-                  <Text style={[styles.tabText, isActive && styles.tabTextActive]}>{label}</Text>
-                  <View style={[styles.count, isActive && styles.countActive]}>
-                    <Text style={[styles.countText, isActive && styles.countTextActive]}>
-                      {countBy(statuses)}
-                    </Text>
-                  </View>
-                </>
-              );
-
-              return (
-                <Pressable
-                  key={key}
-                  accessibilityRole="tab"
-                  accessibilityState={{ selected: isActive }}
-                  onPress={() => {
-                    setTab(key);
-                    setSelectedId(undefined);
-                  }}
-                >
-                  {({ pressed }) =>
-                    isActive ? (
-                      <Raised3D
-                        depth={RAISE}
-                        faceStyle={styles.tab}
-                        pressed={pressed}
-                        radius={radius.chip}
-                        variant="primary"
-                      >
-                        {content}
-                      </Raised3D>
-                    ) : (
-                      <View style={[styles.tab, styles.flatRaise, pressed && styles.tabPressed]}>
-                        {content}
-                      </View>
-                    )
-                  }
-                </Pressable>
-              );
-            })}
-          </View>
-        </ScrollView>
-        <Pressable
-          accessibilityLabel="Filtros de tareas"
-          accessibilityRole="button"
-          onPress={() => undefined}
-          style={styles.optionsPressable}
-        >
-          {({ pressed }) => (
-            <Raised3D
-              faceStyle={styles.optionsButton}
-              pressed={pressed}
-              radius={radius.chip}
-              variant="white"
-            >
-              <SlidersHorizontal color={colors.text} size={20} />
-              <Text style={styles.optionsText}>Filtros</Text>
-            </Raised3D>
-          )}
-        </Pressable>
-      </FadeIn>
-
-      {/* Lista + detalle */}
-      <View style={[styles.row, isNarrow && styles.stackedRow]}>
-        <FadeIn delay={STAGGER * 5} style={[styles.listColumn, isNarrow && styles.fullWidth]}>
-          <TaskList
-            grouped={tab === 'pending'}
-            onSelect={setSelectedId}
-            selectedId={selected?.id}
-            tasks={tasks}
-          />
-        </FadeIn>
-        {selected && (
-          <FadeIn delay={STAGGER * 6} style={[styles.detailColumn, isNarrow && styles.fullWidth]}>
-            <TaskDetail key={selected.id} task={selected} />
-          </FadeIn>
-        )}
-      </View>
+      {statsRow}
+      {listAndDetail}
     </ScrollView>
+  ) : (
+    <View
+      onLayout={(event) => setContentWidth(event.nativeEvent.layout.width)}
+      style={styles.screen}
+    >
+      {statsRow}
+      {listAndDetail}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  screen: { flex: 1, gap: spacing.md, padding: spacing.lg },
   scroll: { gap: spacing.md, padding: spacing.lg },
+  main: { flex: 1, minHeight: 0 },
   row: { flexDirection: 'row', gap: spacing.md },
   wrapRow: { flexWrap: 'wrap' },
   stackedRow: { flexDirection: 'column' },
@@ -198,49 +208,4 @@ const styles = StyleSheet.create({
   listColumn: { flex: 1.15, minWidth: 0 },
   detailColumn: { flex: 1, minWidth: 0 },
   fullWidth: { flexBasis: 'auto', width: '100%' },
-
-  toolbar: { alignItems: 'center', flexDirection: 'row', gap: spacing.sm },
-  tabsScroll: { flexGrow: 0, flexShrink: 1 },
-  tabs: {
-    alignItems: 'flex-start',
-    backgroundColor: colors.track,
-    borderRadius: radius.chip,
-    flexDirection: 'row',
-    gap: spacing.xs,
-    padding: spacing.xs,
-  },
-  tab: {
-    alignItems: 'center',
-    borderRadius: radius.chip,
-    flexDirection: 'row',
-    gap: spacing.sm,
-    height: 48,
-    paddingHorizontal: spacing.md,
-  },
-  /** Pestañas planas junto a la 3D: mismo alto total (cara + canto). */
-  flatRaise: { marginBottom: RAISE },
-  tabPressed: { backgroundColor: colors.border },
-  tabText: { color: colors.text, fontFamily: fontFamily.medium, fontSize: 14 },
-  tabTextActive: { color: brand.onBlue, fontFamily: fontFamily.bold },
-  count: {
-    alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderRadius: radius.pill,
-    justifyContent: 'center',
-    minWidth: 24,
-    paddingHorizontal: spacing.xs,
-    paddingVertical: spacing.xs,
-  },
-  countActive: { backgroundColor: brand.onBlue },
-  countText: { color: colors.text, fontFamily: fontFamily.semibold, fontSize: 11 },
-  countTextActive: { color: brand.blueDeep },
-  optionsPressable: { marginLeft: 'auto' },
-  optionsButton: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: spacing.sm,
-    height: 52,
-    paddingHorizontal: spacing.md,
-  },
-  optionsText: { color: colors.text, fontFamily: fontFamily.medium, fontSize: 14 },
 });

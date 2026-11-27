@@ -2,18 +2,22 @@
 
 Especificación del mockup general que se muestra **después del login** y que se reutiliza para los tres roles: alumno (`STUDENT`), docente (`TEACHER`) y administrador (`ADMIN`). Primero se construye el shell y la vista de un rol; los otros dos solo añaden configuración y contenido.
 
-Estado: **base móvil creada, contenido en blanco** (ver §0). Última revisión: 2026-11-12 (UTC).
+Estado: **shell móvil y vistas del alumno en prototipo con datos de desarrollo** (ver §0). Última revisión: 2026-11-26 (UTC).
 
 ## 0. Estado actual y decisiones del usuario
 
-Implementado en `apps/mobile`:
+Implementado en `apps/mobile` (solo visual, datos ficticios en `features/dashboard/mocks/`):
 
-- Ruta `/dashboard` (`src/app/(app)/dashboard.tsx`) → `DashboardScreen` → `DashboardShell`.
-- `Sidebar` con la estética del login (ver §0.1): plegable (72 dp) / desplegado (240 dp), navegación por rol desde `config/roleNavigation.ts` y etiqueta de rol en el pie. El ítem activo es estado local; los ítems aún no navegan.
-- Área de contenido **en blanco**, a la espera de diseño.
-- Sin topbar, sin roles, sin datos. Todo lo descrito en §3–§7 más allá de esto es **propuesta**, no código.
-- Temporal: el botón "Iniciar sesión" del login hace `router.replace('/dashboard')` (no hay autenticación). `src/app/index.tsx` sigue redirigiendo a `/login`.
+- Ruta `/dashboard` (`src/app/(app)/dashboard.tsx`) → `DashboardScreen` → `DashboardShell` con rol `STUDENT` fijo.
+- `Sidebar` con la estética del login (ver §0.1): plegable (72 dp) / desplegado (240 dp), navegación por rol desde `config/roleNavigation.ts` y etiqueta de rol en el pie. La sección activa es **estado local** de `DashboardScreen` (`activeKey`/`onSelect`); aún no hay rutas por sección.
+- Navegación del alumno hoy: Inicio, Cursos, Tareas, Calendario y Progreso. `TEACHER` tiene una lista provisional y `ADMIN` solo Inicio.
+- Vistas hechas (refinadas según [ESTUDIANTE_UX.md](ESTUDIANTE_UX.md), 2026-11-26): **Inicio** (último curso activo + ranking compacto), **Cursos** (buscador, estados y vistas; cursos generales) con su **detalle** (video + resumen; pestañas Lección/Recursos; avance secuencial), **Tareas** (las tarjetas superiores son el selector), **Calendario** y **Progreso** (nuevo). Inicio, Tareas, Calendario y Progreso caben en un solo viewport; Cursos y el detalle de curso se desplazan. El **espacio de resolución de tareas** (`TaskWorkspace`) es una pantalla compartida por Cursos y Tareas.
+- `DashboardScreen` coordina lo que cruza secciones: abrir el curso activo desde el Inicio, el ranking completo en Progreso y el espacio de resolución (la sección de origen queda montada y oculta para conservar su estado). Los datos salen de `features/dashboard/mocks/` (desarrollo) y los cálculos de `features/dashboard/data/` (fuente única para Inicio, Tareas y Progreso).
+- Sin topbar, sin cabecera de página (saludo, buscador, notificaciones y avatar quedan para después), sin datos del API ni sesión. Lo descrito en §3–§7 más allá de esto es **propuesta**, no código; en particular, la navegación Tutor IA / Chat / Ayuda de §4 **no** está en el sidebar (el asistente IA vive dentro del detalle de curso).
+- No hay videollamadas, por decisión del usuario (2026-11-21).
+- Temporal: el botón «Iniciar sesión» del login hace `router.replace('/dashboard')` (no hay autenticación). `src/app/index.tsx` sigue redirigiendo a `/login`.
 - La ruta es `/dashboard` y no `/` porque `src/app/index.tsx` ya ocupa `/`; se revisará en la fase de sesión.
+- Estilo de las vistas (3D «arcilla», `Raised3D`, `SoftScene`, `Clay3DIcon`): [ESTILO_VISUAL.md](ESTILO_VISUAL.md) §6.1.
 
 Respuestas del usuario a las preguntas abiertas:
 
@@ -39,7 +43,7 @@ El sidebar reutiliza la identidad del login para que el paso login → dashboard
 
 Tokens nuevos en `src/theme/index.ts`: `brand` (`blue`, `blueDeep`, `blueNight`, `accent`, `accentPressed`, `onBlue`, `onBlueMuted`, `onBlueSubtle`). El login aún usa sus valores fijos; puede migrarse a `brand` sin cambio visual.
 
-- **Q3 y Q4** siguen abiertas.
+- **Q3** (navegación del alumno) resuelta: Inicio, Cursos, Tareas, Calendario, Progreso (confirmada en ESTUDIANTE_UX §3). **Q4** sigue abierta.
 
 Relacionados: [LOGIN MÓVIL](mobile/LOGIN.md), [ARCHITECTURE](ARCHITECTURE.md), [DECISIONS](DECISIONS.md) (D-11 a D-15), [PENDIENTES](PENDIENTES.md).
 
@@ -248,6 +252,6 @@ Autenticación real, permisos en servidor, datos del API, tutor IA, chat, WebSoc
 
 - ~~**Q1.**~~ (respondida, ver §0) ¿Los docentes y administradores usarán solo web, o también necesitan el panel en tablet? Cambia si el shell móvil debe soportar los tres roles en producción o solo servir de referencia visual.
 - ~~**Q2.**~~ (diferida, ver §0) ¿Se mantiene el azul de marca saturado del login como acento del dashboard, o se prefiere un azul más sobrio (`#2563EB` del tema)? Afecta a `theme`.
-- **Q3.** Navegación definitiva del alumno: ¿las seis secciones propuestas (Inicio, Mis cursos, Tareas, Tutor IA, Chat, Ayuda) son correctas y están en ese orden?
+- **Q3.** Navegación definitiva del alumno: hoy el código usa Inicio, Cursos, Tareas, Calendario y Progreso (distinta de las seis secciones propuestas en §4). ¿Se confirma, y dónde viven Chat y Ayuda?
 - **Q4.** ¿Puede un mismo usuario tener más de un rol (p. ej. docente + administrador)? El esquema actual admite uno solo.
 - ~~**Q5.**~~ (respondida, ver §0) Nombre visible de la marca en el sidebar: `APP_NAME` ("Academia José Pisconte") es largo para 240 dp; ¿se usa versión corta o logo?

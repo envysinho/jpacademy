@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { colors } from '@/theme';
 
-import type { DashboardRole } from '../config/roleNavigation';
+import type { DashboardRole, SidebarNavigationItem } from '../config/roleNavigation';
 
 import { Sidebar } from './Sidebar';
 
@@ -12,12 +12,16 @@ import { Sidebar } from './Sidebar';
 export function DashboardShell({
   activeKey,
   children,
+  items,
   onSelect,
+  onSignOut,
   role,
 }: {
   activeKey: string;
   children?: ReactNode;
+  items?: SidebarNavigationItem[];
   onSelect: (key: string) => void;
+  onSignOut?: () => void;
   role: DashboardRole;
 }) {
   return (
@@ -25,7 +29,13 @@ export function DashboardShell({
       <StatusBar barStyle="dark-content" />
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.root}>
-          <Sidebar activeKey={activeKey} onSelect={onSelect} role={role} />
+          <Sidebar
+            activeKey={activeKey}
+            items={items}
+            onSelect={onSelect}
+            onSignOut={onSignOut}
+            role={role}
+          />
           <View style={styles.content}>{children}</View>
         </View>
       </SafeAreaView>

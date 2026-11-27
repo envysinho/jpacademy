@@ -2,14 +2,14 @@
 
 Plataforma académica para ~60 alumnos con tablets Android (8,7", 4 GB RAM, horizontal), más paneles web para docentes y administradores.
 
-Estado: **scaffolding base** con entorno local verificado (API, web, PostgreSQL, migración `init`, Metro). Solo hay pantallas de demostración y `GET /health`; la app móvil aún no se ha probado en un dispositivo Android. Ver [docs/PENDIENTES.md](docs/PENDIENTES.md).
+Estado: **entorno local verificado** (API, web, PostgreSQL, migración `init`, Metro, emulador de tablet) y **frontend móvil del alumno en prototipo visual**: login, Inicio, Cursos (con detalle), Calendario y Tareas, todos con datos ficticios y sin autenticación. El API solo expone `GET /health` y la web sigue siendo una pantalla de demostración. La app aún no se ha probado en una tablet física. Ver [docs/PENDIENTES.md](docs/PENDIENTES.md).
 
 ## Requisitos
 
 - Node.js 24.22.2 (ver `.node-version`)
 - pnpm 10 (`corepack enable` y `corepack prepare pnpm@10.28.0 --activate`, o `npm i -g pnpm@10`)
 - Docker + Docker Compose (solo para PostgreSQL)
-- Para la app móvil en emulador/dispositivo: Android Studio + JDK 21 (ver `docs/DEVELOPMENT.md`)
+- Para la app móvil en emulador/dispositivo: Android SDK + JDK 21 (ver `docs/DEVELOPMENT.md`). El desarrollo es en Linux nativo
 
 ## Primeros pasos
 
@@ -35,7 +35,7 @@ apps/
 packages/
   shared/      @academy/shared      Tipos y contratos (zod), sin dependencias nativas
   api-client/  @academy/api-client  Cliente HTTP mínimo (fetch) para web y móvil
-docs/                              ARCHITECTURE, DEVELOPMENT, DECISIONS, SETUP, PENDIENTES, HANDOFF, DASHBOARD, mobile/LOGIN
+docs/                              ARCHITECTURE, DEVELOPMENT, DECISIONS, SETUP, PENDIENTES, HANDOFF, DASHBOARD, ESTILO_VISUAL, ESTUDIANTE_UX, ASSETS, mobile/LOGIN
 assets/brand/logos/                Logos originales de marca (ver docs/ASSETS.md)
 compose.yaml                       Solo PostgreSQL
 ```

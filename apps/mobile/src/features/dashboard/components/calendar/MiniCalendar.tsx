@@ -9,7 +9,7 @@ import { brand, colors, fontFamily, radius, spacing } from '@/theme';
 
 import type { EventType } from '../../mocks/studentCalendar';
 
-import { eventTypes } from './calendarVisuals';
+import { EVENT_ORDER, eventTypes } from './calendarVisuals';
 
 const CALENDAR_PALETTE = { base: brand.blue, ink: brand.blueDeep, soft: brand.blueSoft };
 const DAY_WIDTH = 42;
@@ -43,24 +43,34 @@ function NavButton({ direction, label }: { direction: 'prev' | 'next'; label: st
   );
 }
 
-/** Mes con el día de hoy destacado y puntos de color por tipo de evento. */
+/**
+ * Mes con el día de hoy destacado y puntos de color por tipo de evento. Con `fill`, ocupa el
+ * alto disponible y reparte las semanas (5 o 6) de forma proporcional.
+ */
 export function MiniCalendar({
   days,
   events,
+  fill = false,
   firstWeekday,
+  onSelectDay,
+  selectedDay,
   title,
   today,
 }: {
   days: number;
+  /** Tipos de evento por día del mes (puntos bajo el número). */
   events: Record<number, EventType[]>;
+  fill?: boolean;
   firstWeekday: number;
+  onSelectDay?: (day: number) => void;
+  selectedDay?: number;
   title: string;
   today: number;
 }) {
   const weeks = buildCells(firstWeekday, days);
 
   return (
-    <Card style={styles.card}>
+    <Card style={[styles.card, fill && styles.cardFill]}>
       <SoftScene base={brand.blue} />
       <View style={styles.header}>
         <NavButton direction="prev" label="Mes anterior" />
@@ -79,56 +89,70 @@ export function MiniCalendar({
         ))}
       </View>
 
-      <View style={styles.grid}>
+      <View style={[styles.grid, fill && styles.gridFill]}>
         {weeks.map((week, weekIndex) => (
-          <View key={weekIndex} style={styles.week}>
+          <View key={weekIndex} style={[styles.week, fill && styles.weekFill]}>
             {week.map(({ day, inMonth }, dayIndex) => {
               const isToday = inMonth && day === today;
-              const dots = inMonth ? (events[day] ?? []) : [];
+              const isSelected = inMonth && day === selectedDay && !isToday;
+              const dots = inMonth ? (events[day] ?? []).slice(0, 3) : [];
 
               return (
                 <View key={dayIndex} style={styles.cell}>
-                  {/* Hoy: botón 3D (lateral `blueNight` + cara con degradado de marca y brillo). */}
-                  {isToday && (
-                    <>
-                      <View pointerEvents="none" style={styles.todayDepth} />
-                      <LinearGradient
-                        colors={[brand.blue, brand.blueDeep]}
-                        end={{ x: 1, y: 1 }}
-                        pointerEvents="none"
-                        start={{ x: 0, y: 0 }}
-                        style={styles.todayFace}
+                  <Pressable
+                    accessibilityLabel={
+                      inMonth
+                        ? `Día ${day}${dots.length ? `, ${dots.length} eventos` : ''}`
+                        : undefined
+                    }
+                    accessibilityRole={inMonth ? 'button' : undefined}
+                    accessibilityState={inMonth ? { selected: day === selectedDay } : undefined}
+                    disabled={!inMonth || !onSelectDay}
+                    onPress={() => onSelectDay?.(day)}
+                    style={styles.slot}
+                  >
+                    {/* Hoy: botón 3D (lateral `blueNight` + cara con degradado de marca y brillo). */}
+                    {isToday && (
+                      <>
+                        <View pointerEvents="none" style={styles.todayDepth} />
+                        <LinearGradient
+                          colors={[brand.blue, brand.blueDeep]}
+                          end={{ x: 1, y: 1 }}
+                          pointerEvents="none"
+                          start={{ x: 0, y: 0 }}
+                          style={styles.todayFace}
+                        >
+                          <View style={styles.todayShine} />
+                        </LinearGradient>
+                      </>
+                    )}
+                    <View style={[styles.day, isSelected && styles.daySelected]}>
+                      <Text
+                        style={[
+                          styles.dayText,
+                          !inMonth && styles.dayOutside,
+                          isToday && styles.dayTextToday,
+                        ]}
                       >
-                        <View style={styles.todayShine} />
-                      </LinearGradient>
-                    </>
-                  )}
-                  <View style={styles.day}>
-                    <Text
-                      style={[
-                        styles.dayText,
-                        !inMonth && styles.dayOutside,
-                        isToday && styles.dayTextToday,
-                      ]}
-                    >
-                      {day}
-                    </Text>
-                    <View style={styles.dots}>
-                      {dots.map((type, index) => (
-                        <View
-                          key={`${type}-${index}`}
-                          style={[
-                            styles.dot,
-                            {
-                              backgroundColor: isToday
-                                ? brand.onBlue
-                                : eventTypes[type].palette.base,
-                            },
-                          ]}
-                        />
-                      ))}
+                        {day}
+                      </Text>
+                      <View style={styles.dots}>
+                        {dots.map((type, index) => (
+                          <View
+                            key={`${type}-${index}`}
+                            style={[
+                              styles.dot,
+                              {
+                                backgroundColor: isToday
+                                  ? brand.onBlue
+                                  : eventTypes[type].palette.base,
+                              },
+                            ]}
+                          />
+                        ))}
+                      </View>
                     </View>
-                  </View>
+                  </Pressable>
                 </View>
               );
             })}
@@ -143,7 +167,7 @@ export function MiniCalendar({
 export function CalendarLegend() {
   return (
     <Card style={styles.legend}>
-      {(Object.keys(eventTypes) as EventType[]).map((type) => (
+      {EVENT_ORDER.map((type) => (
         <View key={type} style={styles.legendItem}>
           <View style={[styles.legendDot, { backgroundColor: eventTypes[type].palette.base }]} />
           <Text numberOfLines={1} style={styles.legendText}>
@@ -162,11 +186,13 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     padding: spacing.md,
   },
+  cardFill: { flex: 1 },
+  gridFill: { flex: 1, justifyContent: 'space-evenly' },
+  weekFill: { alignItems: 'center', flex: 1 },
   header: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between' },
   titleRow: { alignItems: 'center', flexDirection: 'row', gap: spacing.sm },
   title: { color: colors.text, fontFamily: fontFamily.bold, fontSize: 17 },
   todayDepth: {
-    alignSelf: 'center',
     backgroundColor: brand.blueNight,
     borderRadius: radius.chip,
     height: DAY_HEIGHT,
@@ -175,7 +201,6 @@ const styles = StyleSheet.create({
     width: DAY_WIDTH,
   },
   todayFace: {
-    alignSelf: 'center',
     borderRadius: radius.chip,
     height: DAY_HEIGHT,
     overflow: 'hidden',
@@ -208,6 +233,8 @@ const styles = StyleSheet.create({
   },
   grid: { gap: 4 },
   cell: { alignItems: 'center', flex: 1 },
+  /** Hueco fijo del día (cara + canto del botón 3D de hoy). */
+  slot: { height: DAY_HEIGHT + 4, width: DAY_WIDTH },
   day: {
     alignItems: 'center',
     borderRadius: radius.chip,
@@ -215,6 +242,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     width: DAY_WIDTH,
   },
+  daySelected: { backgroundColor: colors.surface, borderColor: brand.blue, borderWidth: 2 },
   dayText: { color: colors.text, fontFamily: fontFamily.medium, fontSize: 14 },
   dayOutside: { color: colors.trackFill },
   dayTextToday: { color: brand.onBlue, fontFamily: fontFamily.bold },
@@ -227,7 +255,13 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     rowGap: spacing.sm,
   },
-  legendItem: { alignItems: 'center', flexDirection: 'row', gap: spacing.sm, width: '46%' },
+  legendItem: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexGrow: 1,
+    gap: spacing.sm,
+    minWidth: '40%',
+  },
   legendDot: { borderRadius: radius.pill, height: 12, width: 12 },
-  legendText: { color: colors.text, flex: 1, fontFamily: fontFamily.medium, fontSize: 13 },
+  legendText: { color: colors.text, fontFamily: fontFamily.medium, fontSize: 13 },
 });

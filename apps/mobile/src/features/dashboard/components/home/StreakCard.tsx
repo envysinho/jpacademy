@@ -5,7 +5,7 @@ import Svg, { Path, Rect } from 'react-native-svg';
 import { Card } from '@/components/Card';
 import { Clay3DIcon } from '@/components/Clay3DIcon';
 import { ProgressRing } from '@/components/ProgressRing';
-import { brand, categories, colors, fontFamily, spacing } from '@/theme';
+import { brand, categories, colors, fontFamily } from '@/theme';
 
 import type { StreakDay } from '../../mocks/student';
 
@@ -121,18 +121,20 @@ export function StreakCard({
 }
 
 const styles = StyleSheet.create({
-  card: { flex: 1, gap: spacing.md },
+  card: { flex: 1, gap: 12, padding: 20 },
   ringLabel: { color: colors.text, fontFamily: fontFamily.bold, fontSize: 11 },
   days: {
     color: colors.text,
     fontFamily: fontFamily.regular,
     fontSize: 40,
     letterSpacing: -1,
+    lineHeight: 46,
   },
   daysUnit: { color: colors.textMuted, fontFamily: fontFamily.medium, fontSize: 16 },
   hint: { color: colors.textMuted, fontFamily: fontFamily.regular, fontSize: 12 },
   hintCompact: { fontSize: 11 },
-  grid: { gap: 8 },
+  /** Las 4 filas se reparten el alto restante (Inicio en un solo viewport). */
+  grid: { flex: 1, gap: 4, justifyContent: 'space-between', minHeight: 0 },
   row: { flexDirection: 'row', justifyContent: 'space-between' },
   cell: {
     alignItems: 'center',

@@ -1,62 +1,33 @@
-import {
-  Captions,
-  Check,
-  Download,
-  FileSpreadsheet,
-  FileText,
-  Maximize,
-  NotebookPen,
-  PenLine,
-  Play,
-  Presentation,
-  type LucideIcon,
-} from 'lucide-react-native';
-import { useState } from 'react';
+import { Captions, Maximize, NotebookText, Play } from 'lucide-react-native';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Card } from '@/components/Card';
 import { Raised3D } from '@/components/Raised3D';
-import { brand, categories, colors, fontFamily, radius, spacing } from '@/theme';
+import { brand, colors, fontFamily, radius, spacing } from '@/theme';
 
 import type { CourseColor, CourseIcon } from '../../mocks/studentCourses';
-import type { ResourceKind } from '../../mocks/courseDetail';
 import { CourseBanner } from '../courses/CourseBanner';
+import { CardHeader } from '../home/CardHeader';
 
-type TabKey = 'resources' | 'exercises' | 'notes';
+const BRAND_PALETTE = { base: brand.blue, ink: brand.blueDeep, soft: brand.blueSoft };
 
-const TABS: { icon: LucideIcon; key: TabKey; label: string }[] = [
-  { icon: FileText, key: 'resources', label: 'Recursos' },
-  { icon: PenLine, key: 'exercises', label: 'Ejercicios' },
-  { icon: NotebookPen, key: 'notes', label: 'Notas' },
-];
+export type LessonSummary = { concepts: string[]; objectives: string[]; text: string };
 
-const resourceStyle: Record<
-  ResourceKind,
-  { icon: LucideIcon; palette: { ink: string; soft: string } }
-> = {
-  pdf: { icon: FileText, palette: categories.red },
-  sheet: { icon: FileSpreadsheet, palette: categories.green },
-  slides: { icon: Presentation, palette: categories.orange },
-};
-
-/** Reproductor de la lección (portada 3D de la materia + controles sobre vidrio) y material. */
+/**
+ * Reproductor de la lección (portada 3D + controles sobre vidrio) y resumen escrito del tema
+ * activo. Columna estable: no cambia al alternar Lección/Recursos.
+ */
 export function LessonPanel({
   color,
   duration,
-  exercises,
   icon,
-  note,
-  resources,
+  summary,
 }: {
   color: CourseColor;
   duration: string;
-  exercises: { done: boolean; id: string; title: string }[];
   icon: CourseIcon;
-  note: string;
-  resources: { id: string; kind: ResourceKind; meta: string; name: string }[];
+  summary: LessonSummary;
 }) {
-  const [tab, setTab] = useState<TabKey>('resources');
-
   return (
     <View style={styles.root}>
       {/* Reproductor */}
@@ -88,92 +59,35 @@ export function LessonPanel({
         </View>
       </View>
 
-      {/* Material de la lección */}
+      {/* Resumen escrito del tema activo */}
       <Card style={styles.card}>
-        <View style={styles.tabs}>
-          {TABS.map(({ icon: Icon, key, label }) => {
-            const isActive = key === tab;
-            const content = (
-              <>
-                <Icon color={isActive ? brand.onBlue : colors.text} size={16} strokeWidth={2.2} />
-                <Text style={[styles.tabText, isActive && styles.tabTextActive]}>{label}</Text>
-              </>
-            );
-            return (
-              <Pressable
-                key={key}
-                accessibilityRole="tab"
-                accessibilityState={{ selected: isActive }}
-                onPress={() => setTab(key)}
-                style={styles.tabPressable}
-              >
-                {({ pressed }) =>
-                  isActive ? (
-                    <Raised3D
-                      depth={3}
-                      faceStyle={styles.tab}
-                      pressed={pressed}
-                      radius={radius.chip}
-                      variant="primary"
-                    >
-                      {content}
-                    </Raised3D>
-                  ) : (
-                    <View style={[styles.tab, styles.tabFlat]}>{content}</View>
-                  )
-                }
-              </Pressable>
-            );
-          })}
-        </View>
-
-        {tab === 'resources' &&
-          resources.map(({ id, kind, meta, name }) => {
-            const { icon: Icon, palette } = resourceStyle[kind];
-            return (
-              <View key={id} style={styles.resource}>
-                <View style={[styles.resourceIcon, { backgroundColor: palette.soft }]}>
-                  <Icon color={palette.ink} size={20} strokeWidth={2} />
-                </View>
-                <View style={styles.resourceText}>
-                  <Text numberOfLines={1} style={styles.resourceName}>
-                    {name}
-                  </Text>
-                  <Text style={styles.resourceMeta}>{meta}</Text>
-                </View>
-                <Pressable
-                  accessibilityLabel={`Descargar ${name}`}
-                  accessibilityRole="button"
-                  onPress={() => undefined}
-                >
-                  {({ pressed }) => (
-                    <Raised3D
-                      depth={3}
-                      faceStyle={styles.download}
-                      pressed={pressed}
-                      variant="white"
-                    >
-                      <Download color={colors.text} size={18} strokeWidth={2.2} />
-                    </Raised3D>
-                  )}
-                </Pressable>
+        <CardHeader
+          clay={{ kind: 'book', palette: BRAND_PALETTE }}
+          icon={NotebookText}
+          title="Resumen de la lección"
+        />
+        <Text style={styles.body}>{summary.text}</Text>
+        {summary.objectives.length > 0 && (
+          <View style={styles.block}>
+            <Text style={styles.blockTitle}>Objetivos</Text>
+            {summary.objectives.map((objective) => (
+              <View key={objective} style={styles.bulletRow}>
+                <View style={styles.bullet} />
+                <Text style={[styles.body, styles.flex]}>{objective}</Text>
               </View>
-            );
-          })}
-
-        {tab === 'exercises' &&
-          exercises.map(({ done, id, title }) => (
-            <View key={id} style={styles.resource}>
-              <View style={[styles.check, done && styles.checkDone]}>
-                {done && <Check color={brand.onBlue} size={16} strokeWidth={3} />}
-              </View>
-              <Text style={[styles.resourceName, styles.resourceText]}>{title}</Text>
+            ))}
+          </View>
+        )}
+        {summary.concepts.length > 0 && (
+          <View style={styles.block}>
+            <Text style={styles.blockTitle}>Conceptos clave</Text>
+            <View style={styles.concepts}>
+              {summary.concepts.map((concept) => (
+                <View key={concept} style={styles.concept}>
+                  <Text style={styles.conceptText}>{concept}</Text>
+                </View>
+              ))}
             </View>
-          ))}
-
-        {tab === 'notes' && (
-          <View style={styles.noteBox}>
-            <Text style={styles.noteText}>{note}</Text>
           </View>
         )}
       </Card>
@@ -232,62 +146,25 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   seekDot: { backgroundColor: brand.onBlue, borderRadius: 7, height: 14, width: 14 },
-  card: { gap: spacing.sm, padding: spacing.md },
-  tabs: {
-    alignItems: 'flex-start',
-    backgroundColor: colors.track,
-    borderRadius: radius.chip,
-    flexDirection: 'row',
-    gap: 4,
-    padding: 4,
+  card: { gap: spacing.md, padding: spacing.md },
+  flex: { flex: 1 },
+  body: { color: colors.textMuted, fontFamily: fontFamily.regular, fontSize: 14, lineHeight: 21 },
+  block: { gap: 6 },
+  blockTitle: { color: colors.text, fontFamily: fontFamily.bold, fontSize: 14 },
+  bulletRow: { alignItems: 'flex-start', flexDirection: 'row', gap: spacing.sm },
+  bullet: {
+    backgroundColor: brand.blueDeep,
+    borderRadius: radius.pill,
+    height: 6,
+    marginTop: 8,
+    width: 6,
   },
-  tabPressable: { flex: 1 },
-  tab: {
-    alignItems: 'center',
-    borderRadius: radius.chip,
-    flexDirection: 'row',
-    gap: 6,
-    height: 44,
-    justifyContent: 'center',
-  },
-  tabFlat: { marginBottom: 3 },
-  tabText: { color: colors.text, fontFamily: fontFamily.medium, fontSize: 14 },
-  tabTextActive: { color: brand.onBlue, fontFamily: fontFamily.bold },
-  resource: {
-    alignItems: 'center',
-    backgroundColor: colors.background,
-    borderRadius: radius.chip,
-    flexDirection: 'row',
-    gap: spacing.md,
-    minHeight: 60,
+  concepts: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  concept: {
+    backgroundColor: brand.blueSoft,
+    borderRadius: radius.pill,
     paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingVertical: 6,
   },
-  resourceIcon: {
-    alignItems: 'center',
-    borderRadius: 12,
-    height: 40,
-    justifyContent: 'center',
-    width: 40,
-  },
-  resourceText: { flex: 1, gap: 2 },
-  resourceName: { color: colors.text, fontFamily: fontFamily.semibold, fontSize: 14 },
-  resourceMeta: { color: colors.textMuted, fontFamily: fontFamily.regular, fontSize: 12 },
-  download: { alignItems: 'center', height: 40, justifyContent: 'center', width: 40 },
-  check: {
-    alignItems: 'center',
-    borderColor: colors.trackFill,
-    borderRadius: 8,
-    borderWidth: 2,
-    height: 26,
-    justifyContent: 'center',
-    width: 26,
-  },
-  checkDone: { backgroundColor: categories.green.base, borderColor: categories.green.base },
-  noteBox: {
-    backgroundColor: categories.orange.soft,
-    borderRadius: radius.chip,
-    padding: spacing.md,
-  },
-  noteText: { color: colors.text, fontFamily: fontFamily.regular, fontSize: 14, lineHeight: 20 },
+  conceptText: { color: brand.blueDeep, fontFamily: fontFamily.semibold, fontSize: 13 },
 });

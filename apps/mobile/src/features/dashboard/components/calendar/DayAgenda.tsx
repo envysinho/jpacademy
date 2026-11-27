@@ -7,18 +7,22 @@ import {
   type LucideIcon,
 } from 'lucide-react-native';
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { Card } from '@/components/Card';
 import { Clay3DIcon } from '@/components/Clay3DIcon';
 import { SoftScene } from '@/components/SoftScene';
 import { brand, colors, fontFamily, radius, spacing } from '@/theme';
 
-import type { EventIcon, EventType } from '../../mocks/studentCalendar';
+import { Raised3D } from '@/components/Raised3D';
 
-import { eventClayIcons, eventTypes } from './calendarVisuals';
+import type { CalendarEvent } from '../../mocks/studentCalendar';
+
+import { eventTypes } from './calendarVisuals';
 
 type ViewKey = 'day' | 'week' | 'month';
+
+const EMPTY_PALETTE = { base: brand.blue, ink: brand.blueDeep, soft: brand.blueSoft };
 
 const VIEWS: { icon: LucideIcon; key: ViewKey; label: string }[] = [
   { icon: CalendarDays, key: 'day', label: 'Diaria' },
@@ -26,32 +30,31 @@ const VIEWS: { icon: LucideIcon; key: ViewKey; label: string }[] = [
   { icon: LayoutGrid, key: 'month', label: 'Mensual' },
 ];
 
-type AgendaItem = {
-  duration?: string;
-  icon: EventIcon;
-  id: string;
-  status?: string;
-  subtitle: string;
-  time: string;
-  title: string;
-  type: EventType;
-};
-
-/** Agenda del día: selector de vista, fecha y línea de tiempo de eventos. */
+/**
+ * Agenda del día: selector de vista, fecha y línea de tiempo de eventos. Con `fill` ocupa el
+ * alto disponible y la lista se desplaza por dentro si hay más eventos de los que caben.
+ */
 export function DayAgenda({
-  isCompact = false,
+  emptyAction,
+  fill = false,
   items,
+  onNext,
+  onPrev,
   title,
 }: {
-  isCompact?: boolean;
-  items: AgendaItem[];
+  /** Acción del estado vacío (p. ej. volver a estudiar). */
+  emptyAction?: { label: string; onPress: () => void };
+  fill?: boolean;
+  items: CalendarEvent[];
+  onNext?: () => void;
+  onPrev?: () => void;
   title: string;
 }) {
   // Solo visual: la vista semanal y la mensual aún no tienen contenido propio.
   const [view, setView] = useState<ViewKey>('day');
 
   return (
-    <Card style={[styles.card, isCompact && styles.cardCompact]}>
+    <Card style={[styles.card, fill && styles.cardFill]}>
       <View style={styles.views}>
         {VIEWS.map(({ icon: Icon, key, label }) => {
           const isActive = key === view;
@@ -83,15 +86,16 @@ export function DayAgenda({
         </Text>
         <View style={styles.navs}>
           {[
-            { Icon: ChevronLeft, label: 'Día anterior' },
-            { Icon: ChevronRight, label: 'Día siguiente' },
-          ].map(({ Icon, label }) => (
+            { Icon: ChevronLeft, label: 'Día anterior', onPress: onPrev },
+            { Icon: ChevronRight, label: 'Día siguiente', onPress: onNext },
+          ].map(({ Icon, label, onPress }) => (
             <Pressable
               key={label}
               accessibilityLabel={label}
               accessibilityRole="button"
+              disabled={!onPress}
               hitSlop={6}
-              onPress={() => undefined}
+              onPress={onPress}
               style={({ pressed }) => [styles.nav, pressed && styles.navPressed]}
             >
               <Icon color={colors.text} size={20} strokeWidth={2.2} />
@@ -100,9 +104,32 @@ export function DayAgenda({
         </View>
       </View>
 
-      <View style={styles.timeline}>
-        {items.map(({ duration, icon, id, status, subtitle, time, title: itemTitle, type }) => {
-          const { palette } = eventTypes[type];
+      <ScrollView
+        contentContainerStyle={styles.timeline}
+        nestedScrollEnabled
+        scrollEnabled={fill}
+        style={fill && styles.timelineFill}
+      >
+        {items.length === 0 && (
+          <View style={styles.emptyBox}>
+            <Clay3DIcon kind="calendar" palette={EMPTY_PALETTE} size={72} />
+            <Text style={styles.emptyTitle}>Sin eventos este día</Text>
+            <Text style={styles.emptyText}>
+              Aquí solo aparecen entregas, asesorías y actividades con fecha. Avanza a tu ritmo.
+            </Text>
+            {emptyAction && (
+              <Pressable accessibilityRole="button" onPress={emptyAction.onPress}>
+                {({ pressed }) => (
+                  <Raised3D faceStyle={styles.emptyButton} pressed={pressed}>
+                    <Text style={styles.emptyButtonText}>{emptyAction.label}</Text>
+                  </Raised3D>
+                )}
+              </Pressable>
+            )}
+          </View>
+        )}
+        {items.map(({ duration, id, status, subtitle, time, title: itemTitle, type }) => {
+          const { clay, palette } = eventTypes[type];
 
           return (
             <View key={id} style={styles.row}>
@@ -118,12 +145,7 @@ export function DayAgenda({
                 ]}
               >
                 <SoftScene base={palette.base} />
-                <Clay3DIcon
-                  kind={eventClayIcons[icon]}
-                  palette={palette}
-                  shadow={false}
-                  size={42}
-                />
+                <Clay3DIcon kind={clay} palette={palette} shadow={false} size={42} />
                 <View style={styles.eventText}>
                   <Text numberOfLines={1} style={styles.eventTitle}>
                     {itemTitle}
@@ -149,14 +171,31 @@ export function DayAgenda({
             </View>
           );
         })}
-      </View>
+      </ScrollView>
     </Card>
   );
 }
 
 const styles = StyleSheet.create({
-  card: { flex: 1, gap: spacing.md, padding: spacing.md },
-  cardCompact: { flex: 0 },
+  card: { gap: spacing.md, padding: spacing.md },
+  cardFill: { flex: 1 },
+  timelineFill: { flex: 1 },
+  emptyBox: { alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.xl },
+  emptyTitle: { color: colors.text, fontFamily: fontFamily.bold, fontSize: 16 },
+  emptyText: {
+    color: colors.textMuted,
+    fontFamily: fontFamily.regular,
+    fontSize: 13,
+    maxWidth: 340,
+    textAlign: 'center',
+  },
+  emptyButton: {
+    alignItems: 'center',
+    height: 44,
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+  },
+  emptyButtonText: { color: brand.blueDeep, fontFamily: fontFamily.bold, fontSize: 14 },
   views: {
     backgroundColor: colors.track,
     borderRadius: radius.chip,

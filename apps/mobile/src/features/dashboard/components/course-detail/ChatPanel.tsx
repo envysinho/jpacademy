@@ -1,6 +1,8 @@
 import {
+  Camera,
   CircleCheck,
   FileText,
+  Info,
   LifeBuoy,
   Paperclip,
   SendHorizontal,
@@ -8,16 +10,19 @@ import {
   UserRound,
   type LucideIcon,
 } from 'lucide-react-native';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useEffect, useRef, type ComponentRef } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { Card } from '@/components/Card';
 import { Raised3D } from '@/components/Raised3D';
 import { SoftScene } from '@/components/SoftScene';
 import { brand, categories, colors, fontFamily, radius, shadows, spacing } from '@/theme';
 
+import type { ChatTab } from '../../data/StudentSession';
 import type { ChatMessage } from '../../mocks/courseDetail';
+import { studentProfile } from '../../mocks/studentProgress';
 
-export type ChatTab = 'ai' | 'teacher';
+export type { ChatTab };
 
 const TABS: { icon: LucideIcon; key: ChatTab; label: string }[] = [
   { icon: Sparkles, key: 'ai', label: 'Asistente IA' },
@@ -40,19 +45,25 @@ function Avatar({ from }: { from: ChatMessage['from'] }) {
         { backgroundColor: from === 'teacher' ? categories.green.soft : brand.blueSoft },
       ]}
     >
-      <Text
-        style={[
-          styles.avatarText,
-          { color: from === 'teacher' ? categories.green.ink : brand.blueDeep },
-        ]}
-      >
-        {from === 'teacher' ? 'VR' : 'JP'}
-      </Text>
+      {/* Docente sin nombre ficticio: icono genérico hasta tener su foto. */}
+      {from === 'teacher' ? (
+        <UserRound color={categories.green.ink} size={16} strokeWidth={2.2} />
+      ) : (
+        <Text style={[styles.avatarText, { color: brand.blueDeep }]}>
+          {studentProfile.initials}
+        </Text>
+      )}
     </View>
   );
 }
 
-function Bubble({ message }: { message: ChatMessage }) {
+function Bubble({
+  message,
+  onAction,
+}: {
+  message: ChatMessage;
+  onAction?: (actionId: string) => void;
+}) {
   const isStudent = message.from === 'student';
 
   return (
@@ -82,11 +93,7 @@ function Bubble({ message }: { message: ChatMessage }) {
             <View style={styles.analysis}>
               <View style={styles.analysisHeader}>
                 <FileText color={colors.text} size={16} strokeWidth={2.2} />
-                <Text style={[styles.textStrong, styles.flex]}>Análisis de tu tarea</Text>
-                <View style={styles.estimate}>
-                  <CircleCheck color={categories.green.ink} size={13} strokeWidth={2.4} />
-                  <Text style={styles.estimateText}>Estimada: {message.analysis.estimate}</Text>
-                </View>
+                <Text style={[styles.textStrong, styles.flex]}>Orientación sobre tu avance</Text>
               </View>
               <Text style={styles.text}>{message.analysis.summary}</Text>
               {message.analysis.points.map((point) => (
@@ -98,33 +105,71 @@ function Bubble({ message }: { message: ChatMessage }) {
             </View>
           )}
         </View>
+        {message.actions && message.actions.length > 0 && (
+          <View style={styles.actions}>
+            {message.actions.map(({ id, label }) => (
+              <Pressable
+                key={id}
+                accessibilityRole="button"
+                disabled={!onAction}
+                onPress={() => onAction?.(id)}
+              >
+                {({ pressed }) => (
+                  <Raised3D depth={3} faceStyle={styles.actionButton} pressed={pressed}>
+                    <Text style={styles.actionText}>{label}</Text>
+                  </Raised3D>
+                )}
+              </Pressable>
+            ))}
+          </View>
+        )}
         <Text style={styles.meta}>{message.time}</Text>
       </View>
     </View>
   );
 }
 
-/** Chat de la lección: asistente IA y, si no basta, el docente. Solo visual. */
+/**
+ * Chat del espacio de resolución: Asistente IA / Docente, con historial por tarea, borrador por
+ * canal y envío. Consultar aquí **no** es entregar ni consume intentos.
+ *
+ * DESARROLLO: no hay IA, chat docente ni cámara/archivos conectados. Los mensajes enviados se
+ * guardan solo en la sesión y no se simulan respuestas.
+ */
 export function ChatPanel({
-  aiMessages,
+  draft,
   helpRequested,
+  messages,
+  onAction,
+  onChangeDraft,
   onRequestHelp,
+  onSend,
   onTabChange,
   tab,
-  teacher,
-  teacherMessages,
 }: {
-  aiMessages: ChatMessage[];
+  draft: string;
   helpRequested: boolean;
+  messages: ChatMessage[];
+  /** Botones dentro de los mensajes (ver `ChatMessage.actions`). */
+  onAction?: (actionId: string) => void;
+  onChangeDraft: (text: string) => void;
   onRequestHelp: () => void;
+  onSend: () => void;
   onTabChange: (tab: ChatTab) => void;
   tab: ChatTab;
-  teacher: string;
-  teacherMessages: ChatMessage[];
 }) {
+  const scrollRef = useRef<ComponentRef<typeof ScrollView>>(null);
+  const hasUnanswered = messages.at(-1)?.id.startsWith('local-') ?? false;
+  const canSend = draft.trim().length > 0;
+
+  // Al llegar un mensaje nuevo o cambiar de canal, mostrar el final del historial.
+  useEffect(() => {
+    scrollRef.current?.scrollToEnd({ animated: false });
+  }, [messages.length, tab]);
+
   return (
     <Card style={styles.card}>
-      <View style={styles.tabs}>
+      <View accessibilityRole="tablist" style={styles.tabs}>
         {TABS.map(({ icon: Icon, key, label }) => {
           const isActive = key === tab;
           const content = (
@@ -161,90 +206,134 @@ export function ChatPanel({
         })}
       </View>
 
-      <View style={styles.messages}>
-        {tab === 'ai' ? (
-          <>
-            {aiMessages.map((message) => (
-              <Bubble key={message.id} message={message} />
-            ))}
-            {/* Escalado: si la IA no basta, se pide ayuda al docente. */}
-            <View style={styles.escalation}>
-              <SoftScene base={categories.green.base} />
-              <LifeBuoy color={categories.green.ink} size={22} strokeWidth={2} />
-              <Text style={[styles.text, styles.flex]}>
-                ¿Sigue sin quedar claro? {teacher} puede ayudarte.
-              </Text>
-              <Pressable accessibilityRole="button" onPress={onRequestHelp}>
-                {({ pressed }) => (
-                  <Raised3D
-                    depth={3}
-                    faceStyle={styles.escalationButton}
-                    palette={categories.green}
-                    pressed={pressed}
-                    variant="white"
-                  >
-                    <Text style={styles.escalationText}>
-                      {helpRequested ? 'Ver chat' : 'Pedir ayuda'}
-                    </Text>
-                  </Raised3D>
-                )}
-              </Pressable>
-            </View>
-          </>
-        ) : (
-          <>
-            {helpRequested ? (
-              <View style={styles.system}>
-                <CircleCheck color={categories.green.ink} size={14} strokeWidth={2.4} />
-                <Text style={styles.systemText}>
-                  Solicitud de ayuda enviada a {teacher} · 15:38
-                </Text>
-              </View>
-            ) : (
-              <View style={styles.system}>
-                <Text style={styles.systemText}>
-                  Escribe a {teacher}. Responde en horario de clases.
-                </Text>
-              </View>
+      <ScrollView
+        ref={scrollRef}
+        contentContainerStyle={styles.messages}
+        keyboardShouldPersistTaps="handled"
+        style={styles.flex}
+      >
+        {tab === 'teacher' && (
+          <View style={styles.system}>
+            {helpRequested && (
+              <CircleCheck color={categories.green.ink} size={14} strokeWidth={2.4} />
             )}
-            {teacherMessages.map((message) => (
-              <Bubble key={message.id} message={message} />
-            ))}
-          </>
+            <Text style={styles.systemText}>
+              {helpRequested
+                ? 'Solicitud de ayuda enviada a tu docente. Te responderá por este chat.'
+                : 'Aún no has pedido ayuda. Escribe a tu docente o usa «Contactar con docente».'}
+            </Text>
+          </View>
         )}
-      </View>
+        {messages.length === 0 && tab === 'ai' && (
+          <View style={styles.system}>
+            <Text style={styles.systemText}>
+              Pregunta por un paso que no entiendas. El asistente te orienta con pistas, no con la
+              respuesta final.
+            </Text>
+          </View>
+        )}
+        {messages.map((message) => (
+          <Bubble key={message.id} message={message} onAction={onAction} />
+        ))}
+        {hasUnanswered && (
+          <View style={styles.notice}>
+            <Info color={colors.textMuted} size={14} strokeWidth={2.2} />
+            <Text style={[styles.systemText, styles.flex]}>
+              {tab === 'ai'
+                ? 'El asistente IA aún no está conectado: tu mensaje queda en el historial de esta tarea.'
+                : 'El chat con el docente aún no está conectado: tu mensaje queda en el historial de esta tarea.'}
+            </Text>
+          </View>
+        )}
+        {/* Escalado: si la IA no basta, se pide ayuda al docente. */}
+        {tab === 'ai' && (
+          <View style={styles.escalation}>
+            <SoftScene base={categories.green.base} />
+            <LifeBuoy color={categories.green.ink} size={22} strokeWidth={2} />
+            <Text style={[styles.text, styles.flex]}>
+              ¿Sigue sin quedar claro? Un docente puede ayudarte.
+            </Text>
+            <Pressable accessibilityRole="button" onPress={onRequestHelp}>
+              {({ pressed }) => (
+                <Raised3D
+                  depth={3}
+                  faceStyle={styles.escalationButton}
+                  palette={categories.green}
+                  pressed={pressed}
+                  variant="white"
+                >
+                  <Text style={styles.escalationText}>
+                    {helpRequested ? 'Ver chat' : 'Pedir ayuda'}
+                  </Text>
+                </Raised3D>
+              )}
+            </Pressable>
+          </View>
+        )}
+      </ScrollView>
 
       <View style={styles.inputRow}>
-        <Pressable
-          accessibilityLabel="Adjuntar archivo"
-          accessibilityRole="button"
-          onPress={() => undefined}
-        >
-          {({ pressed }) => (
-            <Raised3D depth={3} faceStyle={styles.iconButton} pressed={pressed} variant="white">
-              <Paperclip color={colors.text} size={18} strokeWidth={2.2} />
-            </Raised3D>
-          )}
-        </Pressable>
+        {(
+          [
+            { icon: Camera, label: 'Fotografiar tu desarrollo' },
+            { icon: Paperclip, label: 'Adjuntar archivo' },
+          ] as const
+        ).map(({ icon: Icon, label }) => (
+          <View
+            key={label}
+            accessibilityHint="Pendiente de integrar cámara y archivos"
+            accessibilityLabel={label}
+            accessibilityRole="button"
+            accessibilityState={{ disabled: true }}
+            accessible
+            style={[styles.iconButton, styles.iconButtonDisabled]}
+          >
+            <Icon color={colors.trackFill} size={18} strokeWidth={2.2} />
+          </View>
+        ))}
         <TextInput
-          placeholder={tab === 'ai' ? 'Escribe una pregunta o mensaje…' : `Escribe a ${teacher}…`}
+          accessibilityLabel={
+            tab === 'ai' ? 'Mensaje para el asistente' : 'Mensaje para el docente'
+          }
+          multiline
+          onChangeText={onChangeDraft}
+          placeholder={tab === 'ai' ? 'Escribe una pregunta o mensaje…' : 'Escribe a tu docente…'}
           placeholderTextColor={colors.textMuted}
           style={styles.input}
+          value={draft}
         />
-        <Pressable accessibilityLabel="Enviar" accessibilityRole="button" onPress={() => undefined}>
+        <Pressable
+          accessibilityLabel="Enviar"
+          accessibilityRole="button"
+          accessibilityState={{ disabled: !canSend }}
+          disabled={!canSend}
+          onPress={onSend}
+        >
           {({ pressed }) => (
-            <Raised3D depth={3} faceStyle={styles.iconButton} pressed={pressed} variant="primary">
-              <SendHorizontal color={brand.onBlue} size={18} strokeWidth={2.2} />
+            <Raised3D
+              depth={3}
+              faceStyle={styles.iconButton}
+              pressed={pressed}
+              variant={canSend ? 'primary' : 'white'}
+            >
+              <SendHorizontal
+                color={canSend ? brand.onBlue : colors.textMuted}
+                size={18}
+                strokeWidth={2.2}
+              />
             </Raised3D>
           )}
         </Pressable>
       </View>
+      <Text style={styles.hint}>
+        Fotos y archivos se podrán adjuntar al integrar la cámara. Consultar no consume intentos.
+      </Text>
     </Card>
   );
 }
 
 const styles = StyleSheet.create({
-  card: { gap: spacing.md, padding: spacing.md },
+  card: { flex: 1, gap: spacing.md, padding: spacing.md },
   flex: { flex: 1 },
   tabs: {
     alignItems: 'flex-start',
@@ -265,7 +354,7 @@ const styles = StyleSheet.create({
   tabFlat: { marginBottom: 3 },
   tabText: { color: colors.text, fontFamily: fontFamily.medium, fontSize: 14 },
   tabTextActive: { color: brand.onBlue, fontFamily: fontFamily.bold },
-  messages: { gap: spacing.md },
+  messages: { gap: spacing.md, paddingVertical: spacing.xs },
   messageRow: { alignItems: 'flex-start', flexDirection: 'row', gap: spacing.sm },
   messageRowStudent: { flexDirection: 'row-reverse' },
   messageColumn: { flexShrink: 1, gap: 4, maxWidth: '82%' },
@@ -304,17 +393,15 @@ const styles = StyleSheet.create({
   },
   attachmentName: { color: colors.text, fontFamily: fontFamily.semibold, fontSize: 13 },
   analysis: { gap: 4 },
-  analysisHeader: { alignItems: 'center', flexDirection: 'row', gap: 6, marginBottom: 2 },
-  estimate: {
+  actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 2 },
+  actionButton: {
     alignItems: 'center',
-    backgroundColor: categories.green.soft,
-    borderRadius: radius.pill,
-    flexDirection: 'row',
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
+    height: 40,
+    justifyContent: 'center',
+    paddingHorizontal: 14,
   },
-  estimateText: { color: categories.green.ink, fontFamily: fontFamily.semibold, fontSize: 11 },
+  actionText: { color: brand.blueDeep, fontFamily: fontFamily.bold, fontSize: 13 },
+  analysisHeader: { alignItems: 'center', flexDirection: 'row', gap: 6, marginBottom: 2 },
   escalation: {
     alignItems: 'center',
     backgroundColor: categories.green.soft,
@@ -342,18 +429,42 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   systemText: { color: colors.textMuted, fontFamily: fontFamily.medium, fontSize: 12 },
-  inputRow: { alignItems: 'flex-start', flexDirection: 'row', gap: spacing.sm },
-  iconButton: { alignItems: 'center', height: 44, justifyContent: 'center', width: 44 },
+  notice: {
+    alignItems: 'flex-start',
+    backgroundColor: colors.track,
+    borderRadius: radius.chip,
+    flexDirection: 'row',
+    gap: 6,
+    padding: 10,
+  },
+  inputRow: { alignItems: 'flex-end', flexDirection: 'row', gap: spacing.sm },
+  iconButton: {
+    alignItems: 'center',
+    borderRadius: radius.pill,
+    height: 48,
+    justifyContent: 'center',
+    width: 48,
+  },
+  iconButtonDisabled: {
+    backgroundColor: colors.track,
+    borderColor: colors.border,
+    borderWidth: 1,
+    marginBottom: 3,
+  },
+  hint: { color: colors.textMuted, fontFamily: fontFamily.regular, fontSize: 11 },
   input: {
     backgroundColor: colors.background,
     borderColor: colors.border,
-    borderRadius: radius.pill,
+    borderRadius: radius.chip,
     borderWidth: 1,
     color: colors.text,
     flex: 1,
     fontFamily: fontFamily.regular,
     fontSize: 14,
-    height: 44,
+    maxHeight: 120,
+    minHeight: 48,
     paddingHorizontal: spacing.md,
+    paddingVertical: 12,
+    marginBottom: 3,
   },
 });

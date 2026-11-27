@@ -29,7 +29,8 @@ export type Clay3DKind =
   | 'flame'
   | 'clock'
   | 'trophy'
-  | 'monitor';
+  | 'monitor'
+  | 'student';
 export type ClayPalette = { base: string; ink: string; soft: string };
 
 const WHITE = colors.surface;
@@ -239,6 +240,32 @@ function Monitor({ hl, palette }: PartProps) {
   );
 }
 
+/**
+ * Estudiante: cuerpo y cabeza con volumen y birrete. Marcador de posición del avatar hasta que
+ * exista la foto del alumno.
+ */
+function Student({ hl, palette }: PartProps) {
+  return (
+    <G>
+      <Solid d="M16 92 Q16 60 50 60 Q84 60 84 92 Z" depth={4} hl={hl} palette={palette} />
+      <Solid
+        d="M32 40 A18 18 0 1 0 68 40 A18 18 0 1 0 32 40 Z"
+        depth={4}
+        hl={hl}
+        palette={palette}
+      />
+      <Circle cx={43} cy={42} fill={WHITE} opacity={0.9} r={2.6} />
+      <Circle cx={57} cy={42} fill={WHITE} opacity={0.9} r={2.6} />
+      {/* Birrete */}
+      <Path d="M24 22 L50 11 L76 22 L50 33 Z" fill={palette.ink} transform="translate(0 3)" />
+      <Path d="M24 22 L50 11 L76 22 L50 33 Z" fill={palette.base} />
+      <Path d="M24 22 L50 11 L76 22 L50 33 Z" fill={`url(#${hl})`} />
+      <Path d="M70 24 V36" stroke={palette.ink} strokeLinecap="round" strokeWidth={3} />
+      <Circle cx={70} cy={38} fill={palette.ink} r={3} />
+    </G>
+  );
+}
+
 const PARTS: Record<Clay3DKind, (props: PartProps) => React.JSX.Element> = {
   badge: Badge,
   book: Book,
@@ -249,6 +276,7 @@ const PARTS: Record<Clay3DKind, (props: PartProps) => React.JSX.Element> = {
   flame: Flame,
   flask: Flask,
   monitor: Monitor,
+  student: Student,
   trophy: Trophy,
 };
 

@@ -1,10 +1,16 @@
 /**
- * Datos ficticios del detalle de un curso (roadmap, lección, chat y tarea). Solo visual: se usa
- * el mismo contenido de muestra para cualquier curso; vendrá de la base de datos más adelante.
+ * DATOS DE DESARROLLO (mock) del detalle de un curso: temario, lección activa, material y chat
+ * inicial de su tarea. Se usa el mismo contenido de muestra para cualquier curso; vendrá de la
+ * API más adelante.
+ *
+ * Estados del temario (avance secuencial estricto): `done` = completada (no navegable),
+ * `current` = única lección accesible, `pending` = bloqueada.
  */
 
 export type LessonStatus = 'done' | 'current' | 'pending';
 export type ResourceKind = 'pdf' | 'slides' | 'sheet';
+/** Origen del material de estudio. `ai` = práctica generada con IA (cuando exista el servicio). */
+export type MaterialSource = 'teacher' | 'ai';
 
 export type RoadmapItem = {
   duration?: string;
@@ -25,7 +31,9 @@ export type ChatMessage = {
   title?: string;
   steps?: string[];
   attachment?: { name: string; size: string };
-  analysis?: { estimate: string; points: string[]; question: string; summary: string };
+  analysis?: { points: string[]; question: string; summary: string };
+  /** Botones bajo el mensaje (p. ej. «Ver video del tema»); el id lo interpreta la pantalla. */
+  actions?: { id: string; label: string }[];
 };
 
 export const courseDetailMock = {
@@ -35,7 +43,6 @@ export const courseDetailMock = {
     title: 'Ecuaciones y funciones',
     unit: 'Unidad 3',
   },
-  teacher: 'Prof. Valeria Ríos',
   units: [
     {
       id: 'u1',
@@ -131,18 +138,52 @@ export const courseDetailMock = {
       title: 'Unidad 4: Aplicaciones',
     },
   ] satisfies RoadmapUnit[],
-  resources: [
-    { id: 'r1', kind: 'pdf', meta: 'PDF · 1,2 MB', name: 'Resumen: Ecuaciones y funciones' },
-    { id: 'r2', kind: 'slides', meta: 'PPTX · 4,8 MB', name: 'Presentación de la clase' },
-    { id: 'r3', kind: 'sheet', meta: 'XLSX · 320 KB', name: 'Ejercicios propuestos' },
-  ] satisfies { id: string; kind: ResourceKind; meta: string; name: string }[],
-  exercises: [
-    { done: true, id: 'e1', title: 'Identifica a, b y c en 5 funciones' },
-    { done: true, id: 'e2', title: 'Calcula el vértice de cada parábola' },
-    { done: false, id: 'e3', title: 'Grafica f(x) = x² − 4x + 3' },
-  ],
-  note: 'El vértice está en x = −b/(2a). Si a > 0 la parábola abre hacia arriba.',
-  task: { attempts: '1 de 3', due: '20 sep, 23:59', title: 'Funciones cuadráticas' },
+  /** Resumen escrito de la lección activa (sustituye al antiguo selector Recursos/Ejercicios/Notas). */
+  summary: {
+    concepts: [
+      'Función cuadrática: f(x) = ax² + bx + c',
+      'Vértice: x = −b/(2a)',
+      'Apertura según el signo de a',
+    ],
+    objectives: [
+      'Reconocer una función cuadrática y sus coeficientes.',
+      'Calcular el vértice y el eje de simetría.',
+      'Esbozar la parábola a partir de pocos puntos.',
+    ],
+    text: 'Una ecuación relaciona expresiones mediante una igualdad; una función asigna a cada valor de x un único valor f(x). En esta lección pasamos de resolver ecuaciones a estudiar funciones cuadráticas y su gráfica, la parábola.',
+  },
+  /** Material de estudio de la lección activa. */
+  materials: [
+    {
+      id: 'r1',
+      kind: 'pdf',
+      meta: 'PDF · 1,2 MB',
+      name: 'Ejemplos resueltos: funciones cuadráticas',
+      source: 'teacher',
+    },
+    {
+      id: 'r2',
+      kind: 'pdf',
+      meta: 'PDF · 8 ejercicios',
+      name: 'Práctica: vértice y raíces',
+      source: 'ai',
+    },
+    {
+      id: 'r3',
+      kind: 'slides',
+      meta: 'PPTX · 4,8 MB',
+      name: 'Presentación de la clase',
+      source: 'teacher',
+    },
+  ] satisfies {
+    id: string;
+    kind: ResourceKind;
+    meta: string;
+    name: string;
+    source: MaterialSource;
+  }[],
+  /** Tarea asociada a la lección activa (id de `studentTasksMock`). */
+  lessonTaskId: 't1',
   aiMessages: [
     {
       from: 'student',
@@ -172,7 +213,6 @@ export const courseDetailMock = {
     },
     {
       analysis: {
-        estimate: '18/20',
         points: [
           'Explicar con más detalle el cálculo del vértice.',
           'Revisar la notación en el paso 3 (f(x) en lugar de y).',

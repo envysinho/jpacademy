@@ -1,24 +1,30 @@
 import { LinearGradient } from 'expo-linear-gradient';
-import { Check, ChevronDown, ChevronUp, Play } from 'lucide-react-native';
+import { Check, ChevronDown, ChevronUp, Lock, Play } from 'lucide-react-native';
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { Card } from '@/components/Card';
 import { Clay3DIcon } from '@/components/Clay3DIcon';
 import { SoftScene } from '@/components/SoftScene';
 import { brand, categories, colors, fontFamily, radius, shadows, spacing } from '@/theme';
 
+import { canStudyLesson, lessonStatusLabel } from '../../data/learningRules';
 import type { LessonStatus, RoadmapItem, RoadmapUnit } from '../../mocks/courseDetail';
 import { CardHeader } from '../home/CardHeader';
 
 const NODE = 28;
 const BRAND_PALETTE = { base: brand.blue, ink: brand.blueDeep, soft: brand.blueSoft };
 
-/** Nodo 3D del roadmap: hecho (verde con check), actual (azul con play) o pendiente (anillo). */
+/** Altura máxima del temario antes de desplazarse por dentro (cursos largos). */
+const MAX_LIST_HEIGHT = 520;
+
+/** Nodo 3D del roadmap: hecho (verde con check), actual (azul con play) o bloqueado (candado). */
 function StatusNode({ size = NODE, status }: { size?: number; status: LessonStatus }) {
   if (status === 'pending') {
     return (
-      <View style={[styles.nodePending, { borderRadius: size / 2, height: size, width: size }]} />
+      <View style={[styles.nodePending, { borderRadius: size / 2, height: size, width: size }]}>
+        <Lock color={colors.textMuted} size={size * 0.46} strokeWidth={2.4} />
+      </View>
     );
   }
 
@@ -60,8 +66,14 @@ function unitStatus(unit: RoadmapUnit): LessonStatus {
   return 'pending';
 }
 
+/**
+ * Fila del temario. No es navegable: el avance es secuencial y la lección activa ya está abierta
+ * a la izquierda. Expandir una unidad solo permite ver su estructura.
+ */
 function LessonRow({ isLast, item }: { isLast: boolean; item: RoadmapItem }) {
-  const isCurrent = item.status === 'current';
+  const isCurrent = canStudyLesson(item.status);
+  const isLocked = item.status === 'pending';
+  const stateLabel = item.kind === 'task' ? 'Tarea' : lessonStatusLabel[item.status];
 
   return (
     <View style={styles.lessonRow}>
@@ -76,27 +88,31 @@ function LessonRow({ isLast, item }: { isLast: boolean; item: RoadmapItem }) {
           <View style={[styles.railLine, item.status === 'done' && styles.railLineDone]} />
         )}
       </View>
-      <Pressable
-        accessibilityRole="button"
-        onPress={() => undefined}
-        style={({ pressed }) => [
-          styles.lesson,
-          isCurrent && styles.lessonCurrent,
-          pressed && !isCurrent && styles.lessonPressed,
-        ]}
+      <View
+        accessibilityLabel={`${item.title}. ${stateLabel}`}
+        accessible
+        style={[styles.lesson, isCurrent && styles.lessonCurrent]}
       >
         {isCurrent && <SoftScene base={brand.blue} />}
         <View style={styles.lessonText}>
           <Text
             numberOfLines={2}
-            style={[styles.lessonTitle, isCurrent && styles.lessonTitleCurrent]}
+            style={[
+              styles.lessonTitle,
+              isCurrent && styles.lessonTitleCurrent,
+              isLocked && styles.lessonTitleLocked,
+            ]}
           >
             {item.title}
           </Text>
-          {item.duration && <Text style={styles.lessonMeta}>{item.duration}</Text>}
+          <Text style={styles.lessonMeta}>
+            {[item.duration, item.kind === 'lesson' && !isCurrent ? stateLabel : undefined]
+              .filter(Boolean)
+              .join(' · ')}
+          </Text>
         </View>
         {isCurrent && <Text style={styles.nowPill}>En curso</Text>}
-      </Pressable>
+      </View>
     </View>
   );
 }
@@ -114,49 +130,65 @@ export function RoadmapCard({ units }: { units: RoadmapUnit[] }) {
         icon={Play}
         title="Contenido del curso"
       />
-      {units.map((unit) => {
-        const isOpen = unit.id === openId;
-        const status = unitStatus(unit);
-        const lessons = unit.items.filter((item) => item.kind === 'lesson');
-        const done = lessons.filter((item) => item.status === 'done').length;
-        const Chevron = isOpen ? ChevronUp : ChevronDown;
+      <ScrollView
+        nestedScrollEnabled
+        showsVerticalScrollIndicator
+        style={styles.list}
+        contentContainerStyle={styles.listContent}
+      >
+        {units.map((unit) => {
+          const isOpen = unit.id === openId;
+          const status = unitStatus(unit);
+          const lessons = unit.items.filter((item) => item.kind === 'lesson');
+          const done = lessons.filter((item) => item.status === 'done').length;
+          const Chevron = isOpen ? ChevronUp : ChevronDown;
 
-        return (
-          <View key={unit.id} style={[styles.unit, isOpen && styles.unitOpen]}>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityState={{ expanded: isOpen }}
-              onPress={() => setOpenId(isOpen ? undefined : unit.id)}
-              style={styles.unitHeader}
-            >
-              <StatusNode status={status} />
-              <View style={styles.unitText}>
-                <Text numberOfLines={2} style={styles.unitTitle}>
-                  {unit.title}
-                </Text>
-                <Text style={styles.unitMeta}>
-                  {done} / {lessons.length} lecciones
-                </Text>
-              </View>
-              <Chevron color={colors.textMuted} size={20} strokeWidth={2.2} />
-            </Pressable>
-            {isOpen && (
-              <View style={styles.lessons}>
-                {unit.items.map((item, index) => (
-                  <LessonRow key={item.id} isLast={index === unit.items.length - 1} item={item} />
-                ))}
-              </View>
-            )}
-          </View>
-        );
-      })}
+          return (
+            <View key={unit.id} style={[styles.unit, isOpen && styles.unitOpen]}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`${unit.title}, ${done} de ${lessons.length} lecciones`}
+                accessibilityState={{ expanded: isOpen }}
+                onPress={() => setOpenId(isOpen ? undefined : unit.id)}
+                style={styles.unitHeader}
+              >
+                <StatusNode status={status} />
+                <View style={styles.unitText}>
+                  <Text numberOfLines={2} style={styles.unitTitle}>
+                    {unit.title}
+                  </Text>
+                  <Text style={styles.unitMeta}>
+                    {done} / {lessons.length} lecciones
+                  </Text>
+                </View>
+                <Chevron color={colors.textMuted} size={20} strokeWidth={2.2} />
+              </Pressable>
+              {isOpen && (
+                <View style={styles.lessons}>
+                  {unit.items.map((item, index) => (
+                    <LessonRow key={item.id} isLast={index === unit.items.length - 1} item={item} />
+                  ))}
+                </View>
+              )}
+            </View>
+          );
+        })}
+      </ScrollView>
     </Card>
   );
 }
 
 const styles = StyleSheet.create({
   card: { gap: spacing.sm, padding: spacing.md },
-  nodePending: { backgroundColor: colors.surface, borderColor: colors.trackFill, borderWidth: 2 },
+  nodePending: {
+    alignItems: 'center',
+    backgroundColor: colors.surface,
+    borderColor: colors.trackFill,
+    borderWidth: 2,
+    justifyContent: 'center',
+  },
+  list: { maxHeight: MAX_LIST_HEIGHT },
+  listContent: { gap: spacing.sm },
   nodeEdge: { position: 'absolute', top: 3 },
   nodeFace: { alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   unit: { borderRadius: radius.chip, padding: 10 },
@@ -183,10 +215,10 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   lessonCurrent: { backgroundColor: brand.blueSoft, ...shadows.card },
-  lessonPressed: { backgroundColor: colors.track },
   lessonText: { flex: 1, gap: 2 },
   lessonTitle: { color: colors.text, fontFamily: fontFamily.medium, fontSize: 14 },
   lessonTitleCurrent: { color: brand.blueDeep, fontFamily: fontFamily.bold },
+  lessonTitleLocked: { color: colors.textMuted },
   lessonMeta: { color: colors.textMuted, fontFamily: fontFamily.regular, fontSize: 12 },
   nowPill: {
     backgroundColor: colors.surface,
